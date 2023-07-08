@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 __author__  = 'Fabian Gittins'
-__date__    = '05/07/2023'
+__date__    = '08/07/2023'
 
 import numpy as np
+from scipy.sparse import csr_matrix
 
 class tricubic(object):
     """
@@ -69,7 +70,7 @@ class tricubic(object):
         self._Yj, self._Yjplus1 = None, None
         self._Zk, self._Zkplus1 = None, None
         self._alpha = None
-        self._Binv = np.array([
+        self._Binv = csr_matrix([
                 [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
@@ -514,7 +515,7 @@ class tricubic(object):
         self._Yj, self._Yjplus1 = self.Y[j0], self.Y[j0 + 1]
         self._Zk, self._Zkplus1 = self.Z[k0], self.Z[k0 + 1]
 
-        return np.dot(self._Binv, b)
+        return self._Binv.dot(b)
     
     def __call__(self, x, y, z, dx=False, dy=False, dz=False):
         """
@@ -561,14 +562,17 @@ class tricubic(object):
             self._alpha = self._calculate_coefficients(i0, j0, k0)
 
         # evaluate tricubic function
+        xi = (x - self._Xi)/(self._Xiplus1 - self._Xi)
+        eta = (y - self._Yj)/(self._Yjplus1 - self._Yj)
+        zeta = (z - self._Zk)/(self._Zkplus1 - self._Zk)
         f = 0
-        for a in range(4):
-            for c in range(4):
-                for d in range(4):
-                    f += (self._alpha[a + 4*c + 16*d]
-                          *((x - self._Xi)/(self._Xiplus1 - self._Xi))**a
-                          *((y - self._Yj)/(self._Yjplus1 - self._Yj))**c
-                          *((z - self._Zk)/(self._Zkplus1 - self._Zk))**d)
+        for c in range(4):
+            for d in range(4):
+                f += ((self._alpha[4*c + 16*d] 
+                       + xi*(self._alpha[1 + 4*c + 16*d] 
+                             + xi*(self._alpha[2 + 4*c + 16*d] 
+                                   + xi*(self._alpha[3 + 4*c + 16*d]))))
+                      *eta**c*zeta**d)
         return f
     
     def partial_derivative(self, x, y, z, dx=True, dy=False, dz=False):
@@ -619,73 +623,35 @@ class tricubic(object):
             self._alpha = self._calculate_coefficients(i0, j0, k0)
 
         # evaluate derivative of tricubic function
+        xi = (x - self._Xi)/(self._Xiplus1 - self._Xi)
+        eta = (y - self._Yj)/(self._Yjplus1 - self._Yj)
+        zeta = (z - self._Zk)/(self._Zkplus1 - self._Zk)
         df = 0
         if dx:
             for a in range(1, 4):
-                for c in range(4):
-                    for d in range(4):
-                        df += (self._alpha[a + 4*c + 16*d]
-                               *a*((x - self._Xi)/(self._Xiplus1 - self._Xi))**(a - 1)/(self._Xiplus1 - self._Xi)
-                               *((y - self._Yj)/(self._Yjplus1 - self._Yj))**c
-                               *((z - self._Zk)/(self._Zkplus1 - self._Zk))**d)
+                for d in range(4):
+                    df += ((self._alpha[a + 16*d] 
+                            + eta*(self._alpha[a + 4*1 + 16*d] 
+                                   + eta*(self._alpha[a + 4*2 + 16*d] 
+                                          + eta*self._alpha[a + 4*3 + 16*d])))
+                           *a*xi**(a - 1)/(self._Xiplus1 - self._Xi)
+                           *zeta**d)
         elif dy:
-            for a in range(4):
-                for c in range(1, 4):
-                    for d in range(4):
-                        df += (self._alpha[a + 4*c + 16*d]
-                               *((x - self._Xi)/(self._Xiplus1 - self._Xi))**a
-                               *c*((y - self._Yj)/(self._Yjplus1 - self._Yj))**(c - 1)/(self._Yjplus1 - self._Yj)
-                               *((z - self._Zk)/(self._Zkplus1 - self._Zk))**d)
+            for c in range(1, 4):
+                for d in range(4):
+                    df += ((self._alpha[4*c + 16*d] 
+                            + xi*(self._alpha[1 + 4*c + 16*d] 
+                                  + xi*(self._alpha[2 + 4*c + 16*d] 
+                                        + xi*self._alpha[3 + 4*c + 16*d])))
+                           *c*eta**(c - 1)/(self._Yjplus1 - self._Yj)
+                           *zeta**d)
         elif dz:
-            for a in range(4):
-                for c in range(4):
-                    for d in range(1, 4):
-                        df += (self._alpha[a + 4*c + 16*d]
-                               *((x - self._Xi)/(self._Xiplus1 - self._Xi))**a
-                               *((y - self._Yj)/(self._Yjplus1 - self._Yj))**c
-                               *d*((z - self._Zk)/(self._Zkplus1 - self._Zk))**(d - 1)/(self._Zkplus1 - self._Zk))
+            for c in range(4):
+                for d in range(1, 4):
+                    df += ((self._alpha[4*c + 16*d] 
+                            + xi*(self._alpha[1 + 4*c + 16*d] 
+                                  + xi*(self._alpha[2 + 4*c + 16*d] 
+                                        + xi*self._alpha[3 + 4*c + 16*d])))
+                           *eta**c
+                           *d*zeta**(d - 1)/(self._Zkplus1 - self._Zk))
         return df
-
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    
-    # first example: simple one-dimensional cubic function
-    f = lambda x: 2*x**3 - 3*x**2 - 3*x + 2
-
-    X = Y = Z = np.linspace(-3, 3, 11)
-    x, y, z = np.meshgrid(X, Y, Z, indexing='ij')
-
-    F = f(x)
-
-    interp1 = tricubic(X, Y, Z, F)
-
-    Xnew = np.linspace(-3, 3, 101)
-    Fnew = np.zeros((Xnew.size))
-    for i, X0 in enumerate(Xnew):
-        Fnew[i] = interp1(X0, 0, 0)
-
-    fig, ax = plt.subplots()
-    ax.plot(X, F[:, 5, 5], 'o-')
-    ax.plot(Xnew, Fnew)
-
-    # second example: two-dimensional Ricker wavelet
-    psi = lambda x, y: (1 - (x**2 + y**2))*np.exp(-(x**2 + y**2))
-
-    X = Y = Z = np.linspace(-5, 5, 21)
-    x, y, z = np.meshgrid(X, Y, Z, indexing='ij')
-
-    Psi = psi(x, y)
-
-    interp2 = tricubic(X, Y, Z, Psi)
-
-    Xnew = Ynew = np.linspace(-5, 5, 101)
-    Psinew = np.zeros((Xnew.size, Ynew.size))
-    for i, X0 in enumerate(Xnew):
-        for j, Y0 in enumerate(Ynew):
-            Psinew[i, j] = interp2(X0, Y0, 0)
-
-    fig, ax = plt.subplots()
-    ax.plot(Y, Psi[10, :, 10], 'o-')
-    ax.plot(Ynew, Psinew[50, :])
-
-    plt.show()

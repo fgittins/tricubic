@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 __author__  = 'Fabian Gittins'
-__date__    = '27/07/2023'
+__date__    = '15/09/2023'
 
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -47,6 +47,15 @@ class tricubic(object):
         if Z.size != F.shape[2]:
             raise ValueError('Z-dimension of F must have same number of '
                              'elements as Z')
+        if not np.all(np.diff(X) > 0) and not np.all(np.diff(X) < 0):
+            raise ValueError('X must be either monotonically increasing or '
+                             'decreasing')
+        if not np.all(np.diff(Y) > 0) and not np.all(np.diff(Y) < 0):
+            raise ValueError('Y must be either monotonically increasing or '
+                             'decreasing')
+        if not np.all(np.diff(Z) > 0) and not np.all(np.diff(Z) < 0):
+            raise ValueError('Z must be either monotonically increasing or '
+                             'decreasing')
 
         self.X = X
         self.Y = Y
@@ -550,8 +559,9 @@ class tricubic(object):
             return self.partial_derivative(x, y, z, dx, dy, dz)
 
         # check if coefficients from last interpolation can be re-used
-        if (not self._initialised or self._Xi <= x < self._Xiplus1 
-            or self._Yj <= y < self._Yjplus1 or self._Zk <= z < self._Zkplus1):
+        if (not self._initialised or not (self._Xi <= x < self._Xiplus1 
+                                          and self._Yj <= y < self._Yjplus1 
+                                          and self._Zk <= z < self._Zkplus1)):
             # find new origin of cube
             i0 = np.where(self.X <= x)[0][-1]
             j0 = np.where(self.Y <= y)[0][-1]
@@ -571,14 +581,17 @@ class tricubic(object):
         xi = (x - self._Xi)/(self._Xiplus1 - self._Xi)
         eta = (y - self._Yj)/(self._Yjplus1 - self._Yj)
         zeta = (z - self._Zk)/(self._Zkplus1 - self._Zk)
+
+        xiarray = [1, xi, xi**2, xi**3]
+        etaarray = [1, eta, eta**2, eta**3]
+        zetaarray = [1, zeta, zeta**2, zeta**3]
+
         f = 0
-        for c in range(4):
-            for d in range(4):
-                f += ((self._alpha[4*c + 16*d] 
-                       + xi*(self._alpha[1 + 4*c + 16*d] 
-                             + xi*(self._alpha[2 + 4*c + 16*d] 
-                                   + xi*(self._alpha[3 + 4*c + 16*d]))))
-                      *eta**c*zeta**d)
+        for a in range(4):
+            for c in range(4):
+                for d in range(4):
+                    f += (self._alpha[a + 4*c + 16*d]
+                          *xiarray[a]*etaarray[c]*zetaarray[d])
         return f
     
     def partial_derivative(self, x, y, z, dx=True, dy=False, dz=False):
@@ -611,8 +624,9 @@ class tricubic(object):
             raise ValueError('Only one of `dx`, `dy`, `dz` can be True')
 
         # check if coefficients from last interpolation can be re-used
-        if (not self._initialised or self._Xi <= x < self._Xiplus1 
-            or self._Yj <= y < self._Yjplus1 or self._Zk <= z < self._Zkplus1):
+        if (not self._initialised or not (self._Xi <= x < self._Xiplus1 
+                                          and self._Yj <= y < self._Yjplus1 
+                                          and self._Zk <= z < self._Zkplus1)):
             # find new origin of cube
             i0 = np.where(self.X <= x)[0][-1]
             j0 = np.where(self.Y <= y)[0][-1]
@@ -632,32 +646,32 @@ class tricubic(object):
         xi = (x - self._Xi)/(self._Xiplus1 - self._Xi)
         eta = (y - self._Yj)/(self._Yjplus1 - self._Yj)
         zeta = (z - self._Zk)/(self._Zkplus1 - self._Zk)
+
+        xiarray = [1, xi, xi**2, xi**3]
+        etaarray = [1, eta, eta**2, eta**3]
+        zetaarray = [1, zeta, zeta**2, zeta**3]
+
         df = 0
         if dx:
             for a in range(1, 4):
-                for d in range(4):
-                    df += ((self._alpha[a + 16*d] 
-                            + eta*(self._alpha[a + 4*1 + 16*d] 
-                                   + eta*(self._alpha[a + 4*2 + 16*d] 
-                                          + eta*self._alpha[a + 4*3 + 16*d])))
-                           *a*xi**(a - 1)/(self._Xiplus1 - self._Xi)
-                           *zeta**d)
+                for c in range(4):
+                    for d in range(4):
+                        df += (self._alpha[a + 4*c + 16*d]
+                               *a*xiarray[a - 1]/(self._Xiplus1 - self._Xi)
+                               *etaarray[c]*zetaarray[d])
         elif dy:
-            for c in range(1, 4):
-                for d in range(4):
-                    df += ((self._alpha[4*c + 16*d] 
-                            + xi*(self._alpha[1 + 4*c + 16*d] 
-                                  + xi*(self._alpha[2 + 4*c + 16*d] 
-                                        + xi*self._alpha[3 + 4*c + 16*d])))
-                           *c*eta**(c - 1)/(self._Yjplus1 - self._Yj)
-                           *zeta**d)
+            for a in range(4):
+                for c in range(1, 4):
+                    for d in range(4):
+                        df += (self._alpha[a + 4*c + 16*d]
+                               *xiarray[a]
+                               *c*etaarray[c - 1]/(self._Yjplus1 - self._Yj)
+                               *zetaarray[d])
         elif dz:
-            for c in range(4):
-                for d in range(1, 4):
-                    df += ((self._alpha[4*c + 16*d] 
-                            + xi*(self._alpha[1 + 4*c + 16*d] 
-                                  + xi*(self._alpha[2 + 4*c + 16*d] 
-                                        + xi*self._alpha[3 + 4*c + 16*d])))
-                           *eta**c
-                           *d*zeta**(d - 1)/(self._Zkplus1 - self._Zk))
+            for a in range(4):
+                for c in range(4):
+                    for d in range(1, 4):
+                        df += (self._alpha[a + 4*c + 16*d]
+                               *xiarray[a]*etaarray[c]
+                               *d*zetaarray[d - 1]/(self._Zkplus1 - self._Zk))
         return df

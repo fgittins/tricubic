@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 __author__  = 'Fabian Gittins'
-__date__    = '15/09/2023'
+__date__    = '19/09/2023'
 
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -62,24 +62,24 @@ class tricubic(object):
         self.Z = Z
         self.F = F
 
-        self._Xmin, self._Xmax = X.min(), X.max()
-        self._Ymin, self._Ymax = Y.min(), Y.max()
-        self._Zmin, self._Zmax = Z.min(), Z.max()
+        self.__Xmin, self.__Xmax = X.min(), X.max()
+        self.__Ymin, self.__Ymax = Y.min(), Y.max()
+        self.__Zmin, self.__Zmax = Z.min(), Z.max()
 
-        self._dFdX = self._build_dFdX(F, X)
-        self._dFdY = self._build_dFdY(F, Y)
-        self._dFdZ = self._build_dFdZ(F, Z)
-        self._d2FdXdY = self._build_dFdX(self._dFdY, X)
-        self._d2FdXdZ = self._build_dFdX(self._dFdZ, X)
-        self._d2FdYdZ = self._build_dFdY(self._dFdZ, Y)
-        self._d3FdXdYdZ = self._build_dFdX(self._d2FdYdZ, X)
+        self.__dFdX = self.__build_dFdX(F, X)
+        self.__dFdY = self.__build_dFdY(F, Y)
+        self.__dFdZ = self.__build_dFdZ(F, Z)
+        self.__d2FdXdY = self.__build_dFdX(self.__dFdY, X)
+        self.__d2FdXdZ = self.__build_dFdX(self.__dFdZ, X)
+        self.__d2FdYdZ = self.__build_dFdY(self.__dFdZ, Y)
+        self.__d3FdXdYdZ = self.__build_dFdX(self.__d2FdYdZ, X)
 
-        self._initialised = False
-        self._Xi, self._Xiplus1 = None, None
-        self._Yj, self._Yjplus1 = None, None
-        self._Zk, self._Zkplus1 = None, None
-        self._alpha = None
-        self._Binv = csr_matrix([
+        self.__initialised = False
+        self.__Xi, self.__Xiplus1 = None, None
+        self.__Yj, self.__Yjplus1 = None, None
+        self.__Zk, self.__Zkplus1 = None, None
+        self.__alpha = None
+        self.__Binv = csr_matrix([
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
@@ -339,7 +339,7 @@ class tricubic(object):
         ])
 
     @staticmethod
-    def _build_dFdX(F, X):
+    def __build_dFdX(F, X):
         """
         Five-point finite difference formula for 
         :math:`\partial f / \partial x`.
@@ -366,7 +366,7 @@ class tricubic(object):
         return dFdX
 
     @staticmethod
-    def _build_dFdY(F, Y):
+    def __build_dFdY(F, Y):
         """
         Five-point finite difference formula for 
         :math:`\partial f / \partial y`.
@@ -393,7 +393,7 @@ class tricubic(object):
         return dFdY
 
     @staticmethod
-    def _build_dFdZ(F, Z):
+    def __build_dFdZ(F, Z):
         """
         Five-point finite difference formula for 
         :math:`\partial f / \partial z`.
@@ -419,7 +419,7 @@ class tricubic(object):
         dFdZ[:, :, -1] = (25*F[:, :, -5] - 48*F[:, :, -4] + 36*F[:, :, -3] - 16*F[:, :, -2] + 3*F[:, :, -1])/(25*Z[-5] - 48*Z[-4] + 36*Z[-3] - 16*Z[-2] + 3*Z[-1])
         return dFdZ
 
-    def _calculate_coefficients(self, i0, j0, k0):
+    def __calculate_coefficients(self, i0, j0, k0):
         """
         Calculate vector of coefficients :math:`\alpha` for interpolation, which 
         is obtained from linear equation :math:`\alpha = B^{-1} b`.
@@ -458,79 +458,79 @@ class tricubic(object):
             self.F[i0, j0 + 1, k0 + 1],
             self.F[i0 + 1, j0 + 1, k0 + 1],
             #####
-            (self.X[i0 + 1] - self.X[i0])*self._dFdX[i0, j0, k0],
-            (self.X[i0 + 1] - self.X[i0])*self._dFdX[i0 + 1, j0, k0],
-            (self.X[i0 + 1] - self.X[i0])*self._dFdX[i0, j0 + 1, k0],
-            (self.X[i0 + 1] - self.X[i0])*self._dFdX[i0, j0, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*self._dFdX[i0 + 1, j0 + 1, k0],
-            (self.X[i0 + 1] - self.X[i0])*self._dFdX[i0 + 1, j0, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*self._dFdX[i0, j0 + 1, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*self._dFdX[i0 + 1, j0 + 1, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*self.__dFdX[i0, j0, k0],
+            (self.X[i0 + 1] - self.X[i0])*self.__dFdX[i0 + 1, j0, k0],
+            (self.X[i0 + 1] - self.X[i0])*self.__dFdX[i0, j0 + 1, k0],
+            (self.X[i0 + 1] - self.X[i0])*self.__dFdX[i0, j0, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*self.__dFdX[i0 + 1, j0 + 1, k0],
+            (self.X[i0 + 1] - self.X[i0])*self.__dFdX[i0 + 1, j0, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*self.__dFdX[i0, j0 + 1, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*self.__dFdX[i0 + 1, j0 + 1, k0 + 1],
             #####
-            (self.Y[j0 + 1] - self.Y[j0])*self._dFdY[i0, j0, k0],
-            (self.Y[j0 + 1] - self.Y[j0])*self._dFdY[i0 + 1, j0, k0],
-            (self.Y[j0 + 1] - self.Y[j0])*self._dFdY[i0, j0 + 1, k0],
-            (self.Y[j0 + 1] - self.Y[j0])*self._dFdY[i0, j0, k0 + 1],
-            (self.Y[j0 + 1] - self.Y[j0])*self._dFdY[i0 + 1, j0 + 1, k0],
-            (self.Y[j0 + 1] - self.Y[j0])*self._dFdY[i0 + 1, j0, k0 + 1],
-            (self.Y[j0 + 1] - self.Y[j0])*self._dFdY[i0, j0 + 1, k0 + 1],
-            (self.Y[j0 + 1] - self.Y[j0])*self._dFdY[i0 + 1, j0 + 1, k0 + 1],
+            (self.Y[j0 + 1] - self.Y[j0])*self.__dFdY[i0, j0, k0],
+            (self.Y[j0 + 1] - self.Y[j0])*self.__dFdY[i0 + 1, j0, k0],
+            (self.Y[j0 + 1] - self.Y[j0])*self.__dFdY[i0, j0 + 1, k0],
+            (self.Y[j0 + 1] - self.Y[j0])*self.__dFdY[i0, j0, k0 + 1],
+            (self.Y[j0 + 1] - self.Y[j0])*self.__dFdY[i0 + 1, j0 + 1, k0],
+            (self.Y[j0 + 1] - self.Y[j0])*self.__dFdY[i0 + 1, j0, k0 + 1],
+            (self.Y[j0 + 1] - self.Y[j0])*self.__dFdY[i0, j0 + 1, k0 + 1],
+            (self.Y[j0 + 1] - self.Y[j0])*self.__dFdY[i0 + 1, j0 + 1, k0 + 1],
             #####
-            (self.Z[k0 + 1] - self.Z[k0])*self._dFdZ[i0, j0, k0],
-            (self.Z[k0 + 1] - self.Z[k0])*self._dFdZ[i0 + 1, j0, k0],
-            (self.Z[k0 + 1] - self.Z[k0])*self._dFdZ[i0, j0 + 1, k0],
-            (self.Z[k0 + 1] - self.Z[k0])*self._dFdZ[i0, j0, k0 + 1],
-            (self.Z[k0 + 1] - self.Z[k0])*self._dFdZ[i0 + 1, j0 + 1, k0],
-            (self.Z[k0 + 1] - self.Z[k0])*self._dFdZ[i0 + 1, j0, k0 + 1],
-            (self.Z[k0 + 1] - self.Z[k0])*self._dFdZ[i0, j0 + 1, k0 + 1],
-            (self.Z[k0 + 1] - self.Z[k0])*self._dFdZ[i0 + 1, j0 + 1, k0 + 1],
+            (self.Z[k0 + 1] - self.Z[k0])*self.__dFdZ[i0, j0, k0],
+            (self.Z[k0 + 1] - self.Z[k0])*self.__dFdZ[i0 + 1, j0, k0],
+            (self.Z[k0 + 1] - self.Z[k0])*self.__dFdZ[i0, j0 + 1, k0],
+            (self.Z[k0 + 1] - self.Z[k0])*self.__dFdZ[i0, j0, k0 + 1],
+            (self.Z[k0 + 1] - self.Z[k0])*self.__dFdZ[i0 + 1, j0 + 1, k0],
+            (self.Z[k0 + 1] - self.Z[k0])*self.__dFdZ[i0 + 1, j0, k0 + 1],
+            (self.Z[k0 + 1] - self.Z[k0])*self.__dFdZ[i0, j0 + 1, k0 + 1],
+            (self.Z[k0 + 1] - self.Z[k0])*self.__dFdZ[i0 + 1, j0 + 1, k0 + 1],
             #####
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self._d2FdXdY[i0, j0, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self._d2FdXdY[i0 + 1, j0, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self._d2FdXdY[i0, j0 + 1, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self._d2FdXdY[i0, j0, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self._d2FdXdY[i0 + 1, j0 + 1, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self._d2FdXdY[i0 + 1, j0, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self._d2FdXdY[i0, j0 + 1, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self._d2FdXdY[i0 + 1, j0 + 1, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self.__d2FdXdY[i0, j0, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self.__d2FdXdY[i0 + 1, j0, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self.__d2FdXdY[i0, j0 + 1, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self.__d2FdXdY[i0, j0, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self.__d2FdXdY[i0 + 1, j0 + 1, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self.__d2FdXdY[i0 + 1, j0, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self.__d2FdXdY[i0, j0 + 1, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*self.__d2FdXdY[i0 + 1, j0 + 1, k0 + 1],
             #####
-            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdXdZ[i0, j0, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdXdZ[i0 + 1, j0, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdXdZ[i0, j0 + 1, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdXdZ[i0, j0, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdXdZ[i0 + 1, j0 + 1, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdXdZ[i0 + 1, j0, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdXdZ[i0, j0 + 1, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdXdZ[i0 + 1, j0 + 1, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdXdZ[i0, j0, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdXdZ[i0 + 1, j0, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdXdZ[i0, j0 + 1, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdXdZ[i0, j0, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdXdZ[i0 + 1, j0 + 1, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdXdZ[i0 + 1, j0, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdXdZ[i0, j0 + 1, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdXdZ[i0 + 1, j0 + 1, k0 + 1],
             #####
-            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdYdZ[i0, j0, k0],
-            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdYdZ[i0 + 1, j0, k0],
-            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdYdZ[i0, j0 + 1, k0],
-            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdYdZ[i0, j0, k0 + 1],
-            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdYdZ[i0 + 1, j0 + 1, k0],
-            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdYdZ[i0 + 1, j0, k0 + 1],
-            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdYdZ[i0, j0 + 1, k0 + 1],
-            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d2FdYdZ[i0 + 1, j0 + 1, k0 + 1],
+            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdYdZ[i0, j0, k0],
+            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdYdZ[i0 + 1, j0, k0],
+            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdYdZ[i0, j0 + 1, k0],
+            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdYdZ[i0, j0, k0 + 1],
+            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdYdZ[i0 + 1, j0 + 1, k0],
+            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdYdZ[i0 + 1, j0, k0 + 1],
+            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdYdZ[i0, j0 + 1, k0 + 1],
+            (self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d2FdYdZ[i0 + 1, j0 + 1, k0 + 1],
             #####
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d3FdXdYdZ[i0, j0, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d3FdXdYdZ[i0 + 1, j0, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d3FdXdYdZ[i0, j0 + 1, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d3FdXdYdZ[i0, j0, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d3FdXdYdZ[i0 + 1, j0 + 1, k0],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d3FdXdYdZ[i0 + 1, j0, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d3FdXdYdZ[i0, j0 + 1, k0 + 1],
-            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self._d3FdXdYdZ[i0 + 1, j0 + 1, k0 + 1]
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d3FdXdYdZ[i0, j0, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d3FdXdYdZ[i0 + 1, j0, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d3FdXdYdZ[i0, j0 + 1, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d3FdXdYdZ[i0, j0, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d3FdXdYdZ[i0 + 1, j0 + 1, k0],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d3FdXdYdZ[i0 + 1, j0, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d3FdXdYdZ[i0, j0 + 1, k0 + 1],
+            (self.X[i0 + 1] - self.X[i0])*(self.Y[j0 + 1] - self.Y[j0])*(self.Z[k0 + 1] - self.Z[k0])*self.__d3FdXdYdZ[i0 + 1, j0 + 1, k0 + 1]
         ])
 
         # flag for first interpolation
-        self._initialised = True
+        self.__initialised = True
 
         # record location of cube
-        self._Xi, self._Xiplus1 = self.X[i0], self.X[i0 + 1]
-        self._Yj, self._Yjplus1 = self.Y[j0], self.Y[j0 + 1]
-        self._Zk, self._Zkplus1 = self.Z[k0], self.Z[k0 + 1]
+        self.__Xi, self.__Xiplus1 = self.X[i0], self.X[i0 + 1]
+        self.__Yj, self.__Yjplus1 = self.Y[j0], self.Y[j0 + 1]
+        self.__Zk, self.__Zkplus1 = self.Z[k0], self.Z[k0 + 1]
 
-        return self._Binv.dot(b)
+        return self.__Binv.dot(b)
     
     def __call__(self, x, y, z, dx=False, dy=False, dz=False):
         """
@@ -549,38 +549,38 @@ class tricubic(object):
         f : float
             Interpolated values.
         """
-        if x < self._Xmin or self._Xmax < x:
+        if x < self.__Xmin or self.__Xmax < x:
             raise ValueError('x must lie within grid defined by X')
-        if y < self._Ymin or self._Ymax < y:
+        if y < self.__Ymin or self.__Ymax < y:
             raise ValueError('y must lie within grid defined by Y')
-        if z < self._Zmin or self._Zmax < z:
+        if z < self.__Zmin or self.__Zmax < z:
             raise ValueError('z must lie within grid defined by Z')
         if dx or dy or dz:
             return self.partial_derivative(x, y, z, dx, dy, dz)
 
         # check if coefficients from last interpolation can be re-used
-        if (not self._initialised or not (self._Xi <= x < self._Xiplus1 
-                                          and self._Yj <= y < self._Yjplus1 
-                                          and self._Zk <= z < self._Zkplus1)):
+        if (not self.__initialised or not (self.__Xi <= x < self.__Xiplus1 
+                                          and self.__Yj <= y < self.__Yjplus1 
+                                          and self.__Zk <= z < self.__Zkplus1)):
             # find new origin of cube
             i0 = np.where(self.X <= x)[0][-1]
             j0 = np.where(self.Y <= y)[0][-1]
             k0 = np.where(self.Z <= z)[0][-1]
 
             # cheap and cheerful fix for evaluations at final grid points
-            if x == self._Xmax:
+            if x == self.__Xmax:
                 i0 -= 1
-            if y == self._Ymax:
+            if y == self.__Ymax:
                 j0 -= 1
-            if z == self._Zmax:
+            if z == self.__Zmax:
                 k0 -= 1
 
-            self._alpha = self._calculate_coefficients(i0, j0, k0)
+            self.__alpha = self.__calculate_coefficients(i0, j0, k0)
 
         # evaluate tricubic function
-        xi = (x - self._Xi)/(self._Xiplus1 - self._Xi)
-        eta = (y - self._Yj)/(self._Yjplus1 - self._Yj)
-        zeta = (z - self._Zk)/(self._Zkplus1 - self._Zk)
+        xi = (x - self.__Xi)/(self.__Xiplus1 - self.__Xi)
+        eta = (y - self.__Yj)/(self.__Yjplus1 - self.__Yj)
+        zeta = (z - self.__Zk)/(self.__Zkplus1 - self.__Zk)
 
         xiarray = [1, xi, xi**2, xi**3]
         etaarray = [1, eta, eta**2, eta**3]
@@ -590,7 +590,7 @@ class tricubic(object):
         for a in range(4):
             for c in range(4):
                 for d in range(4):
-                    f += (self._alpha[a + 4*c + 16*d]
+                    f += (self.__alpha[a + 4*c + 16*d]
                           *xiarray[a]*etaarray[c]*zetaarray[d])
         return f
     
@@ -614,38 +614,38 @@ class tricubic(object):
         df : float
             Interpolated values of derivative.
         """
-        if x < self._Xmin or self._Xmax < x:
+        if x < self.__Xmin or self.__Xmax < x:
             raise ValueError('x must lie within grid defined by X')
-        if y < self._Ymin or self._Ymax < y:
+        if y < self.__Ymin or self.__Ymax < y:
             raise ValueError('y must lie within grid defined by Y')
-        if z < self._Zmin or self._Zmax < z:
+        if z < self.__Zmin or self.__Zmax < z:
             raise ValueError('z must lie within grid defined by Z')
         if dx + dy + dz > 1:
             raise ValueError('Only one of `dx`, `dy`, `dz` can be True')
 
         # check if coefficients from last interpolation can be re-used
-        if (not self._initialised or not (self._Xi <= x < self._Xiplus1 
-                                          and self._Yj <= y < self._Yjplus1 
-                                          and self._Zk <= z < self._Zkplus1)):
+        if (not self.__initialised or not (self.__Xi <= x < self.__Xiplus1 
+                                          and self.__Yj <= y < self.__Yjplus1 
+                                          and self.__Zk <= z < self.__Zkplus1)):
             # find new origin of cube
             i0 = np.where(self.X <= x)[0][-1]
             j0 = np.where(self.Y <= y)[0][-1]
             k0 = np.where(self.Z <= z)[0][-1]
 
             # cheap and cheerful fix for evaluations at final grid points
-            if x == self._Xmax:
+            if x == self.__Xmax:
                 i0 -= 1
-            if y == self._Ymax:
+            if y == self.__Ymax:
                 j0 -= 1
-            if z == self._Zmax:
+            if z == self.__Zmax:
                 k0 -= 1
 
-            self._alpha = self._calculate_coefficients(i0, j0, k0)
+            self.__alpha = self.__calculate_coefficients(i0, j0, k0)
 
         # evaluate derivative of tricubic function
-        xi = (x - self._Xi)/(self._Xiplus1 - self._Xi)
-        eta = (y - self._Yj)/(self._Yjplus1 - self._Yj)
-        zeta = (z - self._Zk)/(self._Zkplus1 - self._Zk)
+        xi = (x - self.__Xi)/(self.__Xiplus1 - self.__Xi)
+        eta = (y - self.__Yj)/(self.__Yjplus1 - self.__Yj)
+        zeta = (z - self.__Zk)/(self.__Zkplus1 - self.__Zk)
 
         xiarray = [1, xi, xi**2, xi**3]
         etaarray = [1, eta, eta**2, eta**3]
@@ -656,22 +656,22 @@ class tricubic(object):
             for a in range(1, 4):
                 for c in range(4):
                     for d in range(4):
-                        df += (self._alpha[a + 4*c + 16*d]
-                               *a*xiarray[a - 1]/(self._Xiplus1 - self._Xi)
+                        df += (self.__alpha[a + 4*c + 16*d]
+                               *a*xiarray[a - 1]/(self.__Xiplus1 - self.__Xi)
                                *etaarray[c]*zetaarray[d])
         elif dy:
             for a in range(4):
                 for c in range(1, 4):
                     for d in range(4):
-                        df += (self._alpha[a + 4*c + 16*d]
+                        df += (self.__alpha[a + 4*c + 16*d]
                                *xiarray[a]
-                               *c*etaarray[c - 1]/(self._Yjplus1 - self._Yj)
+                               *c*etaarray[c - 1]/(self.__Yjplus1 - self.__Yj)
                                *zetaarray[d])
         elif dz:
             for a in range(4):
                 for c in range(4):
                     for d in range(1, 4):
-                        df += (self._alpha[a + 4*c + 16*d]
+                        df += (self.__alpha[a + 4*c + 16*d]
                                *xiarray[a]*etaarray[c]
-                               *d*zetaarray[d - 1]/(self._Zkplus1 - self._Zk))
+                               *d*zetaarray[d - 1]/(self.__Zkplus1 - self.__Zk))
         return df

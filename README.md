@@ -18,7 +18,7 @@ X, Y, Z = np.linspace(-1, 1, 21)
 x, y, z = np.meshgrid(X, Y, Z, indexing='ij')
 F = f(x, y, z)
 ```
-Then the interpolator object is initiated as
+Then the interpolator object is initialised as
 ```
 interp = tricubic(X, Y, Z, F)
 ```

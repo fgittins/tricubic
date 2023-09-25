@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-
 __author__  = 'Fabian Gittins'
-__date__    = '19/09/2023'
+__date__    = '15/09/2023'
 
 import numpy as np
 from scipy.sparse import csr_matrix

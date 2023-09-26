@@ -12,6 +12,8 @@ We will consider the following function:
 $$f(x, y, z) = - x^3 + x + y^2 - z.$$
 The `tricubic` object accepts four inputs `(X, Y, Z, F)`, which are the samples of the three independent variables $(x, y, z)$ and the one dependent variable $f$. These can be generated for our function as
 ```
+import numpy as np
+
 f = lambda x, y, z: - x**3 + x + y**2 - z
 
 X, Y, Z = np.linspace(-1, 1, 21)
@@ -22,7 +24,7 @@ Then the interpolator object is initialised as
 ```
 interp = tricubic(X, Y, Z, F)
 ```
-The interpolator can be called at a point for an estimate of the function
+The interpolator can be called at a point, say $(0.5, -0.1, 0.3)$, for an estimate of the function
 ```
 interp(0.5, -0.1, 0.3)
 ```
@@ -32,5 +34,4 @@ interp(0.5, -0.1, 0.3, dx=True)
 interp(0.5, -0.1, 0.3, dy=True)
 interp(0.5, -0.1, 0.3, dz=True)
 ```
-
-Due to the local nature of the tricubic interpolation scheme, it does not accept arrays as inputs.
+Due to the local nature of the interpolation scheme, it does not accept arrays as inputs.

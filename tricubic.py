@@ -1,8 +1,7 @@
 __author__  = 'Fabian Gittins'
-__date__    = '15/09/2023'
+__date__    = '26/09/2023'
 
 import numpy as np
-from scipy.sparse import csr_matrix
 
 class tricubic(object):
     """
@@ -77,7 +76,7 @@ class tricubic(object):
         self.__Yj, self.__Yjplus1 = None, None
         self.__Zk, self.__Zkplus1 = None, None
         self.__alpha = None
-        self.__Binv = csr_matrix([
+        self.__Binv = np.array([
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
@@ -528,7 +527,7 @@ class tricubic(object):
         self.__Yj, self.__Yjplus1 = self.Y[j0], self.Y[j0 + 1]
         self.__Zk, self.__Zkplus1 = self.Z[k0], self.Z[k0 + 1]
 
-        return self.__Binv.dot(b)
+        return self.__Binv @ b
     
     def __call__(self, x, y, z, dx=False, dy=False, dz=False):
         """
@@ -580,16 +579,17 @@ class tricubic(object):
         eta = (y - self.__Yj)/(self.__Yjplus1 - self.__Yj)
         zeta = (z - self.__Zk)/(self.__Zkplus1 - self.__Zk)
 
-        xiarray = [1, xi, xi**2, xi**3]
-        etaarray = [1, eta, eta**2, eta**3]
-        zetaarray = [1, zeta, zeta**2, zeta**3]
+        etaarray = (1, eta, eta**2, eta**3)
+        zetaarray = (1, zeta, zeta**2, zeta**3)
 
         f = 0
-        for a in range(4):
-            for c in range(4):
-                for d in range(4):
-                    f += (self.__alpha[a + 4*c + 16*d]
-                          *xiarray[a]*etaarray[c]*zetaarray[d])
+        for c in range(4):
+            for d in range(4):
+                f += ((self.__alpha[4*c + 16*d] 
+                       + xi*(self.__alpha[1 + 4*c + 16*d] 
+                             + xi*(self.__alpha[2 + 4*c + 16*d] 
+                                   + xi*self.__alpha[3 + 4*c + 16*d])))
+                      *etaarray[c]*zetaarray[d])
         return f
     
     def partial_derivative(self, x, y, z, dx=True, dy=False, dz=False):
@@ -645,31 +645,36 @@ class tricubic(object):
         eta = (y - self.__Yj)/(self.__Yjplus1 - self.__Yj)
         zeta = (z - self.__Zk)/(self.__Zkplus1 - self.__Zk)
 
-        xiarray = [1, xi, xi**2, xi**3]
-        etaarray = [1, eta, eta**2, eta**3]
-        zetaarray = [1, zeta, zeta**2, zeta**3]
+        xiarray = (1, xi, xi**2)
+        etaarray = (1, eta, eta**2, eta**3)
+        zetaarray = (1, zeta, zeta**2, zeta**3)
 
         df = 0
         if dx:
             for a in range(1, 4):
-                for c in range(4):
-                    for d in range(4):
-                        df += (self.__alpha[a + 4*c + 16*d]
-                               *a*xiarray[a - 1]/(self.__Xiplus1 - self.__Xi)
-                               *etaarray[c]*zetaarray[d])
+                for d in range(4):
+                    df += ((self.__alpha[a + 16*d] 
+                            + eta*(self.__alpha[a + 4 + 16*d] 
+                                   + eta*(self.__alpha[a + 8 + 16*d] 
+                                          + eta*self.__alpha[a + 12 + 16*d])))
+                           *a*xiarray[a - 1]/(self.__Xiplus1 - self.__Xi)
+                           *zetaarray[d])
         elif dy:
-            for a in range(4):
-                for c in range(1, 4):
-                    for d in range(4):
-                        df += (self.__alpha[a + 4*c + 16*d]
-                               *xiarray[a]
-                               *c*etaarray[c - 1]/(self.__Yjplus1 - self.__Yj)
-                               *zetaarray[d])
+            for c in range(1, 4):
+                for d in range(4):
+                    df += ((self.__alpha[4*c + 16*d] 
+                            + xi*(self.__alpha[1 + 4*c + 16*d] 
+                                  + xi*(self.__alpha[2 + 4*c + 16*d] 
+                                        + xi*self.__alpha[3 + 4*c + 16*d])))
+                           *c*etaarray[c - 1]/(self.__Yjplus1 - self.__Yj)
+                           *zetaarray[d])
         elif dz:
-            for a in range(4):
-                for c in range(4):
-                    for d in range(1, 4):
-                        df += (self.__alpha[a + 4*c + 16*d]
-                               *xiarray[a]*etaarray[c]
-                               *d*zetaarray[d - 1]/(self.__Zkplus1 - self.__Zk))
+            for c in range(4):
+                for d in range(1, 4):
+                    df += ((self.__alpha[4*c + 16*d] 
+                            + xi*(self.__alpha[1 + 4*c + 16*d] 
+                                  + xi*(self.__alpha[2 + 4*c + 16*d] 
+                                        + xi*self.__alpha[3 + 4*c + 16*d])))
+                           *etaarray[c]
+                           *d*zetaarray[d - 1]/(self.__Zkplus1 - self.__Zk))
         return df

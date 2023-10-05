@@ -1,12 +1,12 @@
 __author__  = 'Fabian Gittins'
-__date__    = '26/09/2023'
+__date__    = '05/10/2023'
 
 import numpy as np
 
 class tricubic:
     """A tricubic interpolator in 3 dimensions.
 
-    Based on method described in Ref. [1]_.
+    Based on method described in Ref. [1].
 
     Parameters
     ----------
@@ -22,8 +22,8 @@ class tricubic:
 
     References
     ----------
-    .. [1] Lekien and Marsden (2005), "Tricubic interpolation in three 
-           dimensions," Int. J. Numer. Meth. Eng. 63, 455.
+    [1] Lekien and Marsden (2005), "Tricubic interpolation in three dimensions," 
+        Int. J. Numer. Meth. Eng. 63, 455.
     """
     def __init__(self, X, Y, Z, F):
         X, Y, Z = np.asarray(X), np.asarray(Y), np.asarray(Z)
@@ -338,8 +338,8 @@ class tricubic:
 
     @staticmethod
     def __build_dFdX(F, X):
-        r"""Five-point finite difference formula for 
-        :math:`\partial f / \partial x`.
+        """Five-point finite difference formula for partial derivative with 
+        respect to `x`.
 
         Parameters
         ----------
@@ -364,8 +364,8 @@ class tricubic:
 
     @staticmethod
     def __build_dFdY(F, Y):
-        r"""Five-point finite difference formula for 
-        :math:`\partial f / \partial y`.
+        """Five-point finite difference formula for partial derivative with 
+        respect to `y`.
 
         Parameters
         ----------
@@ -390,8 +390,8 @@ class tricubic:
 
     @staticmethod
     def __build_dFdZ(F, Z):
-        r"""Five-point finite difference formula for 
-        :math:`\partial f / \partial z`.
+        """Five-point finite difference formula for partial derivative with 
+        respect to `z`.
 
         Parameters
         ----------
@@ -415,8 +415,8 @@ class tricubic:
         return dFdZ
 
     def __calculate_coefficients(self, i0, j0, k0):
-        r"""Calculate vector of coefficients :math:`\alpha` for interpolation, which 
-        is obtained from linear equation :math:`\alpha = B^{-1} b`.
+        r"""Calculate vector of coefficients `alpha` for interpolation, which 
+        is obtained from linear equation `alpha = Binv b`.
 
         Parameters
         ----------
@@ -425,16 +425,16 @@ class tricubic:
 
         Notes
         -----
-        Vector :math:`b` is constructed out of following set:
+        Vector `b` is constructed out of following set:
 
-        .. math::
-
-            \left\{ f, \frac{\partial f}{\partial x}, 
-            \frac{\partial f}{\partial y}, \frac{\partial f}{\partial z}, 
-            \frac{\partial^2 f}{\partial x \partial y}, 
-            \frac{\partial^2 f}{\partial x \partial z}, 
-            \frac{\partial^2 f}{\partial y \partial z}, 
-            \frac{\partial^3 f}{\partial x \partial y \partial z} \}.
+            {`f`, 
+            `\partial f / \partial x`, 
+            `\partial f / \partial y`, 
+            `\partial f / \partial z`, 
+            `\partial^2 f / \partial x \partial y`, 
+            `\partial^2 f / \partial x \partial z`, 
+            `\partial^2 f / \partial y \partial z`, 
+            `\partial^3 f / \partial x \partial y \partial z`}.
 
         Each of these quantities is evaluated at 8 corners of cube in following 
         order: `(i0, j0, k0)`, `(i0 + 1, j0, k0)`, `(i0, j0 + 1, k0)`, 
@@ -590,10 +590,8 @@ class tricubic:
         return f
     
     def partial_derivative(self, x, y, z, dx=True, dy=False, dz=False):
-        r"""Evaluate (first) partial derivative of tricubic interpolator with 
-        respect to `x` (:math:`\partial f / \partial x`), `y` 
-        (:math:`\partial f / \partial y`) or `z` 
-        (:math:`\partial f / \partial z`) at `(x, y, z)`. Defaults to partial 
+        """Evaluate (first) partial derivative of tricubic interpolator with 
+        respect to `x`, `y` or `z` at `(x, y, z)`. Defaults to partial 
         derivative with respect to `x`.
 
         Parameters

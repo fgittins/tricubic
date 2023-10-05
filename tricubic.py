@@ -3,9 +3,8 @@ __date__    = '26/09/2023'
 
 import numpy as np
 
-class tricubic(object):
-    """
-    A tricubic interpolator in 3 dimensions.
+class tricubic:
+    """A tricubic interpolator in 3 dimensions.
     
     Parameters
     ----------
@@ -337,8 +336,7 @@ class tricubic(object):
 
     @staticmethod
     def __build_dFdX(F, X):
-        """
-        Five-point finite difference formula for 
+        r"""Five-point finite difference formula for 
         :math:`\partial f / \partial x`.
 
         Parameters
@@ -364,8 +362,7 @@ class tricubic(object):
 
     @staticmethod
     def __build_dFdY(F, Y):
-        """
-        Five-point finite difference formula for 
+        r"""Five-point finite difference formula for 
         :math:`\partial f / \partial y`.
 
         Parameters
@@ -391,8 +388,7 @@ class tricubic(object):
 
     @staticmethod
     def __build_dFdZ(F, Z):
-        """
-        Five-point finite difference formula for 
+        r"""Five-point finite difference formula for 
         :math:`\partial f / \partial z`.
 
         Parameters
@@ -417,8 +413,7 @@ class tricubic(object):
         return dFdZ
 
     def __calculate_coefficients(self, i0, j0, k0):
-        """
-        Calculate vector of coefficients :math:`\alpha` for interpolation, which 
+        r"""Calculate vector of coefficients :math:`\alpha` for interpolation, which 
         is obtained from linear equation :math:`\alpha = B^{-1} b`.
 
         Parameters
@@ -430,13 +425,14 @@ class tricubic(object):
         -----
         Vector :math:`b` is constructed out of following set:
 
-        .. math:: 
+        .. math::
+
             \left\{ f, \frac{\partial f}{\partial x}, 
             \frac{\partial f}{\partial y}, \frac{\partial f}{\partial z}, 
             \frac{\partial^2 f}{\partial x \partial y}, 
             \frac{\partial^2 f}{\partial x \partial z}, 
             \frac{\partial^2 f}{\partial y \partial z}, 
-            \frac{\partial^3 f}{\partial x \partial y \partial z} \right\}.
+            \frac{\partial^3 f}{\partial x \partial y \partial z} \}.
 
         Each of these quantities is evaluated at 8 corners of cube in following 
         order: `(i0, j0, k0)`, `(i0 + 1, j0, k0)`, `(i0, j0 + 1, k0)`, 
@@ -530,8 +526,7 @@ class tricubic(object):
         return self.__Binv @ b
     
     def __call__(self, x, y, z, dx=False, dy=False, dz=False):
-        """
-        Evaluate tricubic interpolator or (first) partial derivative at 
+        """Evaluate tricubic interpolator or (first) partial derivative at 
         position `(x, y, z)`.
 
         Parameters
@@ -544,7 +539,7 @@ class tricubic(object):
         Returns
         -------
         f : float
-            Interpolated values.
+            Interpolated value.
         """
         if x < self.__Xmin or self.__Xmax < x:
             raise ValueError('x must lie within grid defined by X')
@@ -593,8 +588,7 @@ class tricubic(object):
         return f
     
     def partial_derivative(self, x, y, z, dx=True, dy=False, dz=False):
-        """
-        Evaluate (first) partial derivative of tricubic interpolator with 
+        r"""Evaluate (first) partial derivative of tricubic interpolator with 
         respect to `x` (:math:`\partial f / \partial x`), `y` 
         (:math:`\partial f / \partial y`) or `z` 
         (:math:`\partial f / \partial z`) at `(x, y, z)`. Defaults to partial 
@@ -610,7 +604,7 @@ class tricubic(object):
         Returns
         -------
         df : float
-            Interpolated values of derivative.
+            Interpolated value of derivative.
         """
         if x < self.__Xmin or self.__Xmax < x:
             raise ValueError('x must lie within grid defined by X')

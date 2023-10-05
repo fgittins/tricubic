@@ -23,7 +23,7 @@ class tricubic:
     References
     ----------
     .. [1] Lekien and Marsden (2005), "Tricubic interpolation in three 
-        dimensions," Int. J. Numer. Meth. Eng. 63, 455.
+           dimensions," Int. J. Numer. Meth. Eng. 63, 455.
     """
     def __init__(self, X, Y, Z, F):
         X, Y, Z = np.asarray(X), np.asarray(Y), np.asarray(Z)

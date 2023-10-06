@@ -14,7 +14,7 @@ The `Tricubic` object accepts four inputs `(X, Y, Z, F)`, which are the samples 
 ```
 import numpy as np
 
-f = lambda x, y, z: - x**3 + x + y**2 - z
+def f(x, y, z): return - x**3 + x + y**2 - z
 
 X, Y, Z = np.linspace(-1, 1, 21)
 x, y, z = np.meshgrid(X, Y, Z, indexing='ij')

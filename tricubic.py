@@ -1,10 +1,10 @@
+__author__ = 'Fabian Gittins'
+__date__ = '06/10/2023'
+
 import numpy as np
 
-__author__ = 'Fabian Gittins'
-__date__ = '05/10/2023'
 
-
-class tricubic:
+class Tricubic:
     """A tricubic interpolator in 3 dimensions.
 
     Based on method described in Ref. [1].

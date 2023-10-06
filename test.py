@@ -1,9 +1,13 @@
-import unittest
-import numpy as np
-from tricubic import tricubic
+"""Test suite for `Tricubic` interpolator."""
 
 __author__ = 'Fabian Gittins'
 __date__ = '06/10/2023'
+
+import unittest
+
+import numpy as np
+
+from tricubic import Tricubic
 
 
 class Test(unittest.TestCase):
@@ -15,7 +19,7 @@ class Test(unittest.TestCase):
         val = self.rng.random()
         F = np.full((n, n, n), val)
 
-        f = tricubic(X, Y, Z, F)
+        f = Tricubic(X, Y, Z, F)
 
         Xtest = Ytest = Ztest = np.linspace(0, 1, 5*n)
         for x in Xtest:
@@ -31,7 +35,7 @@ class Test(unittest.TestCase):
         X = Y = Z = np.linspace(0, 1, n)
         F = self.rng.random((n, n, n))
 
-        f = tricubic(X, Y, Z, F)
+        f = Tricubic(X, Y, Z, F)
 
         for i, x in enumerate(X):
             for j, y in enumerate(Y):
@@ -46,7 +50,7 @@ class Test(unittest.TestCase):
         X = Y = Z = np.linspace(-5, 5, n)
         F = [[[ftest(x, y, z) for z in Z] for y in Y] for x in X]
 
-        f = tricubic(X, Y, Z, F)
+        f = Tricubic(X, Y, Z, F)
 
         # focus on patch in grid
         Xtest = Ytest = Ztest = np.linspace(0, 1, 3*n)
@@ -66,7 +70,7 @@ class Test(unittest.TestCase):
         X = Y = Z = np.linspace(-5, 5, n)
         F = [[[ftest(x, y, z) for z in Z] for y in Y] for x in X]
 
-        f = tricubic(X, Y, Z, F)
+        f = Tricubic(X, Y, Z, F)
 
         # focus on patch in grid
         Xtest = Ytest = Ztest = np.linspace(-2, -0.5, 3*n)
@@ -87,7 +91,7 @@ class Test(unittest.TestCase):
         X = Y = Z = np.linspace(-2, 2, n)
         F = [[[ftest(x, y, z) for z in Z] for y in Y] for x in X]
 
-        f = tricubic(X, Y, Z, F)
+        f = Tricubic(X, Y, Z, F)
 
         x, y, z = self.rng.random(3,)
         self.assertAlmostEqual(f(x, y, z), ftest(x, y, z), places=5)

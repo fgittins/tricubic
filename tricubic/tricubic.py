@@ -1,6 +1,3 @@
-__author__ = 'Fabian Gittins'
-__date__ = '06/10/2023'
-
 import numpy as np
 
 

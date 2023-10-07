@@ -1,12 +1,10 @@
 """Test suite for `Tricubic` interpolator."""
 
-__author__ = 'Fabian Gittins'
-__date__ = '06/10/2023'
-
 import unittest
 
 import numpy as np
 
+import context
 from tricubic import Tricubic
 
 

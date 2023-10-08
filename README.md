@@ -35,3 +35,10 @@ interp(0.5, -0.1, 0.3, dy=True)
 interp(0.5, -0.1, 0.3, dz=True)
 ```
 Due to the local nature of the interpolation scheme, it does not accept arrays as inputs.
+
+### Testing
+To test, run
+```
+python -m unittest tests.test
+```
+in the root directory.

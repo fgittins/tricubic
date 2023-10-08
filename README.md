@@ -1,7 +1,7 @@
 # tricubic
 Python implementation of a tricubic interpolator in three dimensions. The scheme is based on [Lekien and Marsden (2005), "Tricubic interpolation in three dimensions," Int. J. Numer. Meth. Eng. 63, 455](https://doi.org/10.1002/nme.1296).
 
-### Usage
+## Usage
 `tricubic` requires the `numpy` package, so make sure that this is installed on your system.
 
 Here is a simple example to get you started. The interpolator is an object that can be imported as
@@ -36,7 +36,7 @@ interp(0.5, -0.1, 0.3, dz=True)
 ```
 Due to the local nature of the interpolation scheme, it does not accept arrays as inputs.
 
-### Testing
+## Testing
 To test, run
 ```
 python -m unittest tests.test

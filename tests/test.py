@@ -1,10 +1,7 @@
-"""Test suite for `Tricubic` interpolator."""
-
 import unittest
 
 import numpy as np
 
-import context
 from tricubic import Tricubic
 
 

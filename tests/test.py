@@ -1,3 +1,5 @@
+"""Test suite for `Tricubic` interpolator."""
+
 import unittest
 
 import numpy as np

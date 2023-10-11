@@ -1,13 +1,13 @@
 """Test suite for `Tricubic` interpolator."""
 
-import unittest
+from unittest import TestCase
 
 import numpy as np
 
 from tricubic import Tricubic
 
 
-class Test(unittest.TestCase):
+class Test(TestCase):
     rng = np.random.default_rng(15092023)
 
     def test_constant(self):
@@ -99,7 +99,3 @@ class Test(unittest.TestCase):
                                -2*x*y*np.exp(- x**2 - y**2 - z**2), places=3)
         self.assertAlmostEqual(f(x, y, z, dz=True),
                                -2*x*z*np.exp(- x**2 - y**2 - z**2), places=3)
-
-
-if __name__ == '__main__':
-    unittest.main()

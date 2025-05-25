@@ -11,4 +11,4 @@ __pycache__/
 .vscode/
 
 # Notebooks
-.ipynb_checkpoints/
+notebooks/

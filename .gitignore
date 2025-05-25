@@ -9,3 +9,6 @@ __pycache__/
 
 # VS Code
 .vscode/
+
+# Notebooks
+.ipynb_checkpoints/

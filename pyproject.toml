@@ -3,6 +3,7 @@ name = "tricubic"
 version = "0.1.0"
 description = "Python implementation of a tricubic interpolator in three dimensions."
 readme = "README.md"
+authors = [{ name = "Fabian Gittins", email = "f.w.r.gittins@uu.nl" }]
 requires-python = ">=3.13"
 dependencies = [
     "numpy>=2.2.6",
@@ -15,14 +16,20 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "jupyterlab>=4.4.2",
+    "matplotlib>=3.10.3",
     "pyright>=1.1.401",
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
     "ruff>=0.11.11",
+    "scipy>=1.15.3",
 ]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tricubic"]
+
+[tool.setuptools.package-data]
+"tricubic" = ["binv.npy"]
 
 [tool.ruff]
 line-length = 79

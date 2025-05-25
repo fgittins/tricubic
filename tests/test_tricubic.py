@@ -2,23 +2,23 @@
 
 from unittest import TestCase
 
-import numpy as np
+import numpy
 
 from tricubic import Tricubic
 
 
 class Test(TestCase):
-    rng = np.random.default_rng(15092023)
+    rng = numpy.random.default_rng(15092023)
 
     def test_constant(self):
         n = 5
-        X = Y = Z = np.linspace(0, 1, n)
+        X = Y = Z = numpy.linspace(0, 1, n)
         val = self.rng.random()
-        F = np.full((n, n, n), val)
+        F = numpy.full((n, n, n), val)
 
         f = Tricubic(X, Y, Z, F)
 
-        Xtest = Ytest = Ztest = np.linspace(0, 1, 5 * n)
+        Xtest = Ytest = Ztest = numpy.linspace(0, 1, 5 * n)
         for x in Xtest:
             for y in Ytest:
                 for z in Ztest:
@@ -29,7 +29,7 @@ class Test(TestCase):
 
     def test_cube_corners(self):
         n = 11
-        X = Y = Z = np.linspace(0, 1, n)
+        X = Y = Z = numpy.linspace(0, 1, n)
         F = self.rng.random((n, n, n))
 
         f = Tricubic(X, Y, Z, F)
@@ -44,13 +44,13 @@ class Test(TestCase):
             return 1 + 2 * x + 3 * y - 4 * z
 
         n = 11
-        X = Y = Z = np.linspace(-5, 5, n)
+        X = Y = Z = numpy.linspace(-5, 5, n)
         F = [[[ftest(x, y, z) for z in Z] for y in Y] for x in X]
 
         f = Tricubic(X, Y, Z, F)
 
         # focus on patch in grid
-        Xtest = Ytest = Ztest = np.linspace(0, 1, 3 * n)
+        Xtest = Ytest = Ztest = numpy.linspace(0, 1, 3 * n)
         for x in Xtest:
             for y in Ytest:
                 for z in Ztest:
@@ -64,13 +64,13 @@ class Test(TestCase):
             return -10 + 0.1 * x - 2 * x**2 + x**3 - 5 * y**2
 
         n = 11
-        X = Y = Z = np.linspace(-5, 5, n)
+        X = Y = Z = numpy.linspace(-5, 5, n)
         F = [[[ftest(x, y, z) for z in Z] for y in Y] for x in X]
 
         f = Tricubic(X, Y, Z, F)
 
         # focus on patch in grid
-        Xtest = Ytest = Ztest = np.linspace(-2, -0.5, 3 * n)
+        Xtest = Ytest = Ztest = numpy.linspace(-2, -0.5, 3 * n)
         for x in Xtest:
             for y in Ytest:
                 for z in Ztest:
@@ -83,10 +83,10 @@ class Test(TestCase):
 
     def test_ricker_wavelet_like(self):
         def ftest(x, y, z):
-            return x * np.exp(-(x**2) - y**2 - z**2)
+            return x * numpy.exp(-(x**2) - y**2 - z**2)
 
         n = 51
-        X = Y = Z = np.linspace(-2, 2, n)
+        X = Y = Z = numpy.linspace(-2, 2, n)
         F = [[[ftest(x, y, z) for z in Z] for y in Y] for x in X]
 
         f = Tricubic(X, Y, Z, F)
@@ -97,16 +97,16 @@ class Test(TestCase):
         self.assertAlmostEqual(f(x, y, z), ftest(x, y, z), places=5)
         self.assertAlmostEqual(
             f(x, y, z, dx=True),
-            (1 - 2 * x**2) * np.exp(-(x**2) - y**2 - z**2),
+            (1 - 2 * x**2) * numpy.exp(-(x**2) - y**2 - z**2),
             places=3,
         )
         self.assertAlmostEqual(
             f(x, y, z, dy=True),
-            -2 * x * y * np.exp(-(x**2) - y**2 - z**2),
+            -2 * x * y * numpy.exp(-(x**2) - y**2 - z**2),
             places=3,
         )
         self.assertAlmostEqual(
             f(x, y, z, dz=True),
-            -2 * x * z * np.exp(-(x**2) - y**2 - z**2),
+            -2 * x * z * numpy.exp(-(x**2) - y**2 - z**2),
             places=3,
         )

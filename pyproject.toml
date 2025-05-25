@@ -1,6 +1,6 @@
 [project]
 name = "tricubic"
-version = "0.1.0"
+version = "0.1.1.dev0"
 description = "Python implementation of a tricubic interpolator in three dimensions."
 readme = "README.md"
 authors = [{ name = "Fabian Gittins", email = "f.w.r.gittins@uu.nl" }]
@@ -30,6 +30,9 @@ packages = ["src/tricubic"]
 
 [tool.setuptools.package-data]
 "tricubic" = ["binv.npy"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
 
 [tool.ruff]
 line-length = 79

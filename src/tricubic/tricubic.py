@@ -1,6 +1,7 @@
 from importlib.resources import files
 
 import numpy
+from numpy.typing import ArrayLike, NDArray
 
 
 class Tricubic:
@@ -26,70 +27,93 @@ class Tricubic:
         dimensions," Int. J. Numer. Meth. Eng. 63, 455.
     """
 
-    def __init__(self, X, Y, Z, F):
-        X, Y, Z = numpy.asarray(X), numpy.asarray(Y), numpy.asarray(Z)
-        F = numpy.asarray(F)
-        if X.ndim != 1:
+    def __init__(
+        self, X: ArrayLike, Y: ArrayLike, Z: ArrayLike, F: ArrayLike
+    ) -> None:
+        X_array, Y_array, Z_array = (
+            numpy.asarray(X, dtype=numpy.float64),
+            numpy.asarray(Y, dtype=numpy.float64),
+            numpy.asarray(Z, dtype=numpy.float64),
+        )
+        F_array = numpy.asarray(F, dtype=numpy.float64)
+        if X_array.ndim != 1:
             raise ValueError("X must be one dimensional")
-        if Y.ndim != 1:
+        if Y_array.ndim != 1:
             raise ValueError("Y must be one dimensional")
-        if Z.ndim != 1:
+        if Z_array.ndim != 1:
             raise ValueError("Z must be one dimensional")
-        if F.ndim != 3:
+        if F_array.ndim != 3:
             raise ValueError("F must be three dimensional")
-        if X.size != F.shape[0]:
+        if X_array.size != F_array.shape[0]:
             raise ValueError(
                 "X-dimension of F must have same number of elements as X"
             )
-        if Y.size != F.shape[1]:
+        if Y_array.size != F_array.shape[1]:
             raise ValueError(
                 "Y-dimension of F must have same number of elements as Y"
             )
-        if Z.size != F.shape[2]:
+        if Z_array.size != F_array.shape[2]:
             raise ValueError(
                 "Z-dimension of F must have same number of elements as Z"
             )
-        if not numpy.all(numpy.diff(X) > 0) and not numpy.all(numpy.diff(X) < 0):
+        if not numpy.all(numpy.diff(X) > 0) and not numpy.all(
+            numpy.diff(X) < 0
+        ):
             raise ValueError(
                 "X must be either monotonically increasing or decreasing"
             )
-        if not numpy.all(numpy.diff(Y) > 0) and not numpy.all(numpy.diff(Y) < 0):
+        if not numpy.all(numpy.diff(Y) > 0) and not numpy.all(
+            numpy.diff(Y) < 0
+        ):
             raise ValueError(
                 "Y must be either monotonically increasing or decreasing"
             )
-        if not numpy.all(numpy.diff(Z) > 0) and not numpy.all(numpy.diff(Z) < 0):
+        if not numpy.all(numpy.diff(Z) > 0) and not numpy.all(
+            numpy.diff(Z) < 0
+        ):
             raise ValueError(
                 "Z must be either monotonically increasing or decreasing"
             )
 
-        self.X = X
-        self.Y = Y
-        self.Z = Z
-        self.F = F
+        self.X = X_array
+        self.Y = Y_array
+        self.Z = Z_array
+        self.F = F_array
 
-        self.__Xmin, self.__Xmax = X.min(), X.max()
-        self.__Ymin, self.__Ymax = Y.min(), Y.max()
-        self.__Zmin, self.__Zmax = Z.min(), Z.max()
+        self.__Xmin: numpy.float64 = X_array.min()
+        self.__Xmax: numpy.float64 = X_array.max()
+        self.__Ymin: numpy.float64 = Y_array.min()
+        self.__Ymax: numpy.float64 = Y_array.max()
+        self.__Zmin: numpy.float64 = Z_array.min()
+        self.__Zmax: numpy.float64 = Z_array.max()
 
-        self.__dFdX = self.__build_dFdX(F, X)
-        self.__dFdY = self.__build_dFdY(F, Y)
-        self.__dFdZ = self.__build_dFdZ(F, Z)
-        self.__d2FdXdY = self.__build_dFdX(self.__dFdY, X)
-        self.__d2FdXdZ = self.__build_dFdX(self.__dFdZ, X)
-        self.__d2FdYdZ = self.__build_dFdY(self.__dFdZ, Y)
-        self.__d3FdXdYdZ = self.__build_dFdX(self.__d2FdYdZ, X)
+        self.__dFdX = self.__build_dFdX(F_array, X_array)
+        self.__dFdY = self.__build_dFdY(F_array, Y_array)
+        self.__dFdZ = self.__build_dFdZ(F_array, Z_array)
+        self.__d2FdXdY = self.__build_dFdX(self.__dFdY, X_array)
+        self.__d2FdXdZ = self.__build_dFdX(self.__dFdZ, X_array)
+        self.__d2FdYdZ = self.__build_dFdY(self.__dFdZ, Y_array)
+        self.__d3FdXdYdZ = self.__build_dFdX(self.__d2FdYdZ, X_array)
 
         self.__initialised = False
-        self.__Xi, self.__Xiplus1 = None, None
-        self.__Yj, self.__Yjplus1 = None, None
-        self.__Zk, self.__Zkplus1 = None, None
-        self.__alpha = None
 
-        with files("tricubic").joinpath("binv.npy").open("rb") as f:
-            self.__Binv = numpy.load(f)
+        # place-holder values
+        self.__Xi = self.__Xmin
+        self.__Xiplus1 = self.__Xmax
+        self.__Yj = self.__Ymin
+        self.__Yjplus1 = self.__Ymax
+        self.__Zk = self.__Zmin
+        self.__Zkplus1 = self.__Zmax
+
+        self.__alpha: None | NDArray[numpy.float64] = None
+
+        with files("tricubic").joinpath("binv.npy").open("rb") as file:
+            self.__Binv: NDArray[numpy.int64] = numpy.load(file)
 
     @staticmethod
-    def __build_dFdX(F, X):
+    def __build_dFdX(
+        F: NDArray[numpy.float64], X: NDArray[numpy.float64]
+    ) -> NDArray[numpy.float64]:
         """Five-point finite difference formula for partial derivative with
         respect to `x`.
 
@@ -144,7 +168,9 @@ class Tricubic:
         return dFdX
 
     @staticmethod
-    def __build_dFdY(F, Y):
+    def __build_dFdY(
+        F: NDArray[numpy.float64], Y: NDArray[numpy.float64]
+    ) -> NDArray[numpy.float64]:
         """Five-point finite difference formula for partial derivative with
         respect to `y`.
 
@@ -199,7 +225,9 @@ class Tricubic:
         return dFdY
 
     @staticmethod
-    def __build_dFdZ(F, Z):
+    def __build_dFdZ(
+        F: NDArray[numpy.float64], Z: NDArray[numpy.float64]
+    ) -> NDArray[numpy.float64]:
         """Five-point finite difference formula for partial derivative with
         respect to `z`.
 
@@ -253,7 +281,9 @@ class Tricubic:
         ) / (25 * Z[-5] - 48 * Z[-4] + 36 * Z[-3] - 16 * Z[-2] + 3 * Z[-1])
         return dFdZ
 
-    def __calculate_coefficients(self, i0, j0, k0):
+    def __calculate_coefficients(
+        self, i0: int, j0: int, k0: int
+    ) -> NDArray[numpy.float64]:
         r"""Calculate vector of coefficients `alpha` for interpolation, which
         is obtained from linear equation `alpha = Binv b`.
 
@@ -292,7 +322,7 @@ class Tricubic:
                 self.F[i0 + 1, j0, k0 + 1],
                 self.F[i0, j0 + 1, k0 + 1],
                 self.F[i0 + 1, j0 + 1, k0 + 1],
-                #####
+                ###############################################################
                 (self.X[i0 + 1] - self.X[i0]) * self.__dFdX[i0, j0, k0],
                 (self.X[i0 + 1] - self.X[i0]) * self.__dFdX[i0 + 1, j0, k0],
                 (self.X[i0 + 1] - self.X[i0]) * self.__dFdX[i0, j0 + 1, k0],
@@ -305,7 +335,7 @@ class Tricubic:
                 * self.__dFdX[i0, j0 + 1, k0 + 1],
                 (self.X[i0 + 1] - self.X[i0])
                 * self.__dFdX[i0 + 1, j0 + 1, k0 + 1],
-                #####
+                ###############################################################
                 (self.Y[j0 + 1] - self.Y[j0]) * self.__dFdY[i0, j0, k0],
                 (self.Y[j0 + 1] - self.Y[j0]) * self.__dFdY[i0 + 1, j0, k0],
                 (self.Y[j0 + 1] - self.Y[j0]) * self.__dFdY[i0, j0 + 1, k0],
@@ -318,7 +348,7 @@ class Tricubic:
                 * self.__dFdY[i0, j0 + 1, k0 + 1],
                 (self.Y[j0 + 1] - self.Y[j0])
                 * self.__dFdY[i0 + 1, j0 + 1, k0 + 1],
-                #####
+                ###############################################################
                 (self.Z[k0 + 1] - self.Z[k0]) * self.__dFdZ[i0, j0, k0],
                 (self.Z[k0 + 1] - self.Z[k0]) * self.__dFdZ[i0 + 1, j0, k0],
                 (self.Z[k0 + 1] - self.Z[k0]) * self.__dFdZ[i0, j0 + 1, k0],
@@ -331,7 +361,7 @@ class Tricubic:
                 * self.__dFdZ[i0, j0 + 1, k0 + 1],
                 (self.Z[k0 + 1] - self.Z[k0])
                 * self.__dFdZ[i0 + 1, j0 + 1, k0 + 1],
-                #####
+                ###############################################################
                 (
                     (self.X[i0 + 1] - self.X[i0])
                     * (self.Y[j0 + 1] - self.Y[j0])
@@ -372,7 +402,7 @@ class Tricubic:
                     * (self.Y[j0 + 1] - self.Y[j0])
                     * self.__d2FdXdY[i0 + 1, j0 + 1, k0 + 1]
                 ),
-                #####
+                ###############################################################
                 (
                     (self.X[i0 + 1] - self.X[i0])
                     * (self.Z[k0 + 1] - self.Z[k0])
@@ -413,7 +443,7 @@ class Tricubic:
                     * (self.Z[k0 + 1] - self.Z[k0])
                     * self.__d2FdXdZ[i0 + 1, j0 + 1, k0 + 1]
                 ),
-                #####
+                ###############################################################
                 (
                     (self.Y[j0 + 1] - self.Y[j0])
                     * (self.Z[k0 + 1] - self.Z[k0])
@@ -454,7 +484,7 @@ class Tricubic:
                     * (self.Z[k0 + 1] - self.Z[k0])
                     * self.__d2FdYdZ[i0 + 1, j0 + 1, k0 + 1]
                 ),
-                #####
+                ###############################################################
                 (
                     (self.X[i0 + 1] - self.X[i0])
                     * (self.Y[j0 + 1] - self.Y[j0])
@@ -503,20 +533,32 @@ class Tricubic:
                     * (self.Z[k0 + 1] - self.Z[k0])
                     * self.__d3FdXdYdZ[i0 + 1, j0 + 1, k0 + 1]
                 ),
-            ]
+            ],
+            dtype=numpy.float64,
         )
 
         # flag for first interpolation
         self.__initialised = True
 
         # record location of cube
-        self.__Xi, self.__Xiplus1 = self.X[i0], self.X[i0 + 1]
-        self.__Yj, self.__Yjplus1 = self.Y[j0], self.Y[j0 + 1]
-        self.__Zk, self.__Zkplus1 = self.Z[k0], self.Z[k0 + 1]
+        self.__Xi: numpy.float64 = self.X[i0]
+        self.__Xiplus1: numpy.float64 = self.X[i0 + 1]
+        self.__Yj: numpy.float64 = self.Y[j0]
+        self.__Yjplus1: numpy.float64 = self.Y[j0 + 1]
+        self.__Zk: numpy.float64 = self.Z[k0]
+        self.__Zkplus1: numpy.float64 = self.Z[k0 + 1]
 
         return self.__Binv @ b
 
-    def __call__(self, x, y, z, dx=False, dy=False, dz=False):
+    def __call__(
+        self,
+        x: float,
+        y: float,
+        z: float,
+        dx: bool = False,
+        dy: bool = False,
+        dz: bool = False,
+    ) -> numpy.float64:
         """Evaluate tricubic interpolator or (first) partial derivative at
         position `(x, y, z)`.
 
@@ -548,9 +590,9 @@ class Tricubic:
             and self.__Zk <= z < self.__Zkplus1
         ):
             # find new origin of cube
-            i0 = numpy.where(self.X <= x)[0][-1]
-            j0 = numpy.where(self.Y <= y)[0][-1]
-            k0 = numpy.where(self.Z <= z)[0][-1]
+            i0: int = numpy.where(self.X <= x)[0][-1]
+            j0: int = numpy.where(self.Y <= y)[0][-1]
+            k0: int = numpy.where(self.Z <= z)[0][-1]
 
             # cheap and cheerful fix for evaluations at final grid points
             if x == self.__Xmax:
@@ -562,6 +604,9 @@ class Tricubic:
 
             self.__alpha = self.__calculate_coefficients(i0, j0, k0)
 
+        if self.__alpha is None:
+            raise RuntimeError("`__alpha` not initialized")
+
         # evaluate tricubic function
         xi = (x - self.__Xi) / (self.__Xiplus1 - self.__Xi)
         eta = (y - self.__Yj) / (self.__Yjplus1 - self.__Yj)
@@ -570,10 +615,11 @@ class Tricubic:
         etaarray = (1, eta, eta**2, eta**3)
         zetaarray = (1, zeta, zeta**2, zeta**3)
 
-        f = 0
+        f = numpy.float64(0)
+        val: numpy.float64
         for c in range(4):
             for d in range(4):
-                f += (
+                val = (
                     (
                         self.__alpha[4 * c + 16 * d]
                         + xi
@@ -589,9 +635,18 @@ class Tricubic:
                     * etaarray[c]
                     * zetaarray[d]
                 )
+                f += val
         return f
 
-    def partial_derivative(self, x, y, z, dx=True, dy=False, dz=False):
+    def partial_derivative(
+        self,
+        x: float,
+        y: float,
+        z: float,
+        dx: bool = True,
+        dy: bool = False,
+        dz: bool = False,
+    ) -> numpy.float64:
         """Evaluate (first) partial derivative of tricubic interpolator with
         respect to `x`, `y` or `z` at `(x, y, z)`. Defaults to partial
         derivative with respect to `x`.
@@ -624,9 +679,9 @@ class Tricubic:
             and self.__Zk <= z < self.__Zkplus1
         ):
             # find new origin of cube
-            i0 = numpy.where(self.X <= x)[0][-1]
-            j0 = numpy.where(self.Y <= y)[0][-1]
-            k0 = numpy.where(self.Z <= z)[0][-1]
+            i0: int = numpy.where(self.X <= x)[0][-1]
+            j0: int = numpy.where(self.Y <= y)[0][-1]
+            k0: int = numpy.where(self.Z <= z)[0][-1]
 
             # cheap and cheerful fix for evaluations at final grid points
             if x == self.__Xmax:
@@ -638,6 +693,9 @@ class Tricubic:
 
             self.__alpha = self.__calculate_coefficients(i0, j0, k0)
 
+        if self.__alpha is None:
+            raise RuntimeError("`__alpha` not initialized")
+
         # evaluate derivative of tricubic function
         xi = (x - self.__Xi) / (self.__Xiplus1 - self.__Xi)
         eta = (y - self.__Yj) / (self.__Yjplus1 - self.__Yj)
@@ -647,11 +705,12 @@ class Tricubic:
         etaarray = (1, eta, eta**2, eta**3)
         zetaarray = (1, zeta, zeta**2, zeta**3)
 
-        df = 0
+        df = numpy.float64(0)
+        val: numpy.float64
         if dx:
             for a in range(1, 4):
                 for d in range(4):
-                    df += (
+                    val = (
                         (
                             self.__alpha[a + 16 * d]
                             + eta
@@ -669,10 +728,11 @@ class Tricubic:
                         / (self.__Xiplus1 - self.__Xi)
                         * zetaarray[d]
                     )
+                    df += val
         elif dy:
             for c in range(1, 4):
                 for d in range(4):
-                    df += (
+                    val = (
                         (
                             self.__alpha[4 * c + 16 * d]
                             + xi
@@ -690,10 +750,11 @@ class Tricubic:
                         / (self.__Yjplus1 - self.__Yj)
                         * zetaarray[d]
                     )
+                    df += val
         elif dz:
             for c in range(4):
                 for d in range(1, 4):
-                    df += (
+                    val = (
                         (
                             self.__alpha[4 * c + 16 * d]
                             + xi
@@ -711,4 +772,5 @@ class Tricubic:
                         * zetaarray[d - 1]
                         / (self.__Zkplus1 - self.__Zk)
                     )
+                    df += val
         return df

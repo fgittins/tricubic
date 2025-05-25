@@ -1,0 +1,11 @@
+# Caches
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+
+# Environment
+.venv/
+*.lock
+
+# VS Code
+.vscode/

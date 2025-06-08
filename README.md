@@ -28,7 +28,7 @@ import numpy
 def f(x, y, z):
     return - x**3 + x + y**2 - z
 
-X, Y, Z = numpy.linspace(-1, 1, 21)
+X = Y = Z = numpy.linspace(-1, 1, 21)
 x, y, z = numpy.meshgrid(X, Y, Z, indexing='ij')
 F = f(x, y, z)
 ```

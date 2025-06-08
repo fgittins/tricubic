@@ -1,5 +1,3 @@
-"""Test suite for `Tricubic` interpolator."""
-
 from unittest import TestCase
 
 import numpy
@@ -11,7 +9,7 @@ def ftest(x: float, y: float, z: float) -> float:
     return 1 + 2 * x + 3 * y - 4 * z
 
 
-def gtest(x: float, y: float, z: float) -> float:
+def gtest(x: float, y: float) -> float:
     return -10 + 0.1 * x - 2 * x**2 + x**3 - 5 * y**2
 
 
@@ -19,7 +17,7 @@ def htest(x: float, y: float, z: float) -> float:
     return x * numpy.exp(-(x**2) - y**2 - z**2)
 
 
-class Test(TestCase):
+class TestTricubic(TestCase):
     rng = numpy.random.default_rng(15092023)
 
     def test_constant(self) -> None:
@@ -75,7 +73,7 @@ class Test(TestCase):
     def test_cubic(self) -> None:
         n = 11
         X = Y = Z = numpy.linspace(-5, 5, n, dtype=numpy.float64)
-        F = [[[gtest(x, y, z) for z in Z] for y in Y] for x in X]
+        F = [[[gtest(x, y) for _ in Z] for y in Y] for x in X]
 
         f = Tricubic(X, Y, Z, F)
 
@@ -86,7 +84,7 @@ class Test(TestCase):
         for x in Xtest:
             for y in Ytest:
                 for z in Ztest:
-                    self.assertAlmostEqual(f(x, y, z), gtest(x, y, z))
+                    self.assertAlmostEqual(f(x, y, z), gtest(x, y))
                     self.assertAlmostEqual(
                         f(x, y, z, dx=True), 0.1 - 4 * x + 3 * x**2
                     )
@@ -103,9 +101,7 @@ class Test(TestCase):
         x: numpy.float64
         y: numpy.float64
         z: numpy.float64
-        x, y, z = self.rng.random(
-            3,
-        )
+        x, y, z = self.rng.random(3)
         self.assertAlmostEqual(f(x, y, z), htest(x, y, z), places=5)
         self.assertAlmostEqual(
             f(x, y, z, dx=True),

@@ -1,3 +1,10 @@
+"""
+Class definition for tricubic interpolator in three dimensions.
+
+Module includes:
+- `Tricubic` : Class for tricubic interpolator.
+"""
+
 from importlib.resources import files
 
 import numpy
@@ -5,7 +12,8 @@ from numpy.typing import ArrayLike, NDArray
 
 
 class Tricubic:
-    """A tricubic interpolator in 3 dimensions.
+    """
+    A tricubic interpolator in three dimensions.
 
     Based on method described in Ref. [1].
 
@@ -23,12 +31,17 @@ class Tricubic:
 
     References
     ----------
-    [1] Lekien and Marsden (2005), "Tricubic interpolation in three
-        dimensions," Int. J. Numer. Meth. Eng. 63, 455.
+    [1] Lekien and Marsden (2005),
+    "Tricubic interpolation in three dimensions,"
+    Int. J. Numer. Meth. Eng. 63, 455.
     """
 
     def __init__(
-        self, X: ArrayLike, Y: ArrayLike, Z: ArrayLike, F: ArrayLike
+        self,
+        X: ArrayLike,
+        Y: ArrayLike,
+        Z: ArrayLike,
+        F: ArrayLike,
     ) -> None:
         X_array, Y_array, Z_array = (
             numpy.asarray(X, dtype=numpy.float64),
@@ -37,43 +50,50 @@ class Tricubic:
         )
         F_array = numpy.asarray(F, dtype=numpy.float64)
         if X_array.ndim != 1:
-            raise ValueError("X must be one dimensional")
+            msg = "`X` must be one dimensional"
+            raise ValueError(msg)
         if Y_array.ndim != 1:
-            raise ValueError("Y must be one dimensional")
+            msg = "`Y` must be one dimensional"
+            raise ValueError(msg)
         if Z_array.ndim != 1:
-            raise ValueError("Z must be one dimensional")
+            msg = "`Z` must be one dimensional"
+            raise ValueError(msg)
         if F_array.ndim != 3:
-            raise ValueError("F must be three dimensional")
+            msg = "`F` must be three dimensional"
+            raise ValueError(msg)
         if X_array.size != F_array.shape[0]:
-            raise ValueError(
-                "X-dimension of F must have same number of elements as X"
+            msg = (
+                "First dimension of `F` must have same number of elements as "
+                "`X`"
             )
+            raise ValueError(msg)
         if Y_array.size != F_array.shape[1]:
-            raise ValueError(
-                "Y-dimension of F must have same number of elements as Y"
+            msg = (
+                "Second dimension of `F` must have same number of elements as "
+                "`Y`"
             )
+            raise ValueError(msg)
         if Z_array.size != F_array.shape[2]:
-            raise ValueError(
-                "Z-dimension of F must have same number of elements as Z"
+            msg = (
+                "Third dimension of `F` must have same number of elements as "
+                "`Z`"
             )
+            raise ValueError(msg)
         if not numpy.all(numpy.diff(X) > 0) and not numpy.all(
-            numpy.diff(X) < 0
+            numpy.diff(X) < 0,
         ):
-            raise ValueError(
-                "X must be either monotonically increasing or decreasing"
-            )
+            msg = "`X` must be either monotonically increasing or decreasing"
+            raise ValueError(msg)
         if not numpy.all(numpy.diff(Y) > 0) and not numpy.all(
-            numpy.diff(Y) < 0
+            numpy.diff(Y) < 0,
         ):
-            raise ValueError(
-                "Y must be either monotonically increasing or decreasing"
-            )
+            msg = "`Y` must be either monotonically increasing or decreasing"
+            raise ValueError(msg)
         if not numpy.all(numpy.diff(Z) > 0) and not numpy.all(
-            numpy.diff(Z) < 0
+            numpy.diff(Z) < 0,
         ):
-            raise ValueError(
-                "Z must be either monotonically increasing or decreasing"
-            )
+            msg = "`Z` must be either monotonically increasing or decreasing"
+            raise ValueError(msg)
 
         self.X = X_array
         self.Y = Y_array
@@ -112,9 +132,13 @@ class Tricubic:
 
     @staticmethod
     def __build_dFdX(
-        F: NDArray[numpy.float64], X: NDArray[numpy.float64]
+        F: NDArray[numpy.float64],
+        X: NDArray[numpy.float64],
     ) -> NDArray[numpy.float64]:
-        """Five-point finite difference formula for partial derivative with
+        """
+        Finite-difference formula.
+
+        Five-point finite-difference formula for partial derivative with
         respect to `x`.
 
         Parameters
@@ -169,9 +193,13 @@ class Tricubic:
 
     @staticmethod
     def __build_dFdY(
-        F: NDArray[numpy.float64], Y: NDArray[numpy.float64]
+        F: NDArray[numpy.float64],
+        Y: NDArray[numpy.float64],
     ) -> NDArray[numpy.float64]:
-        """Five-point finite difference formula for partial derivative with
+        """
+        Finite-difference formula.
+
+        Five-point finite-difference formula for partial derivative with
         respect to `y`.
 
         Parameters
@@ -226,9 +254,13 @@ class Tricubic:
 
     @staticmethod
     def __build_dFdZ(
-        F: NDArray[numpy.float64], Z: NDArray[numpy.float64]
+        F: NDArray[numpy.float64],
+        Z: NDArray[numpy.float64],
     ) -> NDArray[numpy.float64]:
-        """Five-point finite difference formula for partial derivative with
+        """
+        Finite-difference formula.
+
+        Five-point finite-difference formula for partial derivative with
         respect to `z`.
 
         Parameters
@@ -282,9 +314,15 @@ class Tricubic:
         return dFdZ
 
     def __calculate_coefficients(
-        self, i0: int, j0: int, k0: int
+        self,
+        i0: int,
+        j0: int,
+        k0: int,
     ) -> NDArray[numpy.float64]:
-        r"""Calculate vector of coefficients `alpha` for interpolation, which
+        r"""
+        Calculate vector of coefficients.
+
+        Calculate vector of coefficients `alpha` for interpolation, which
         is obtained from linear equation `alpha = Binv b`.
 
         Parameters
@@ -559,7 +597,10 @@ class Tricubic:
         dy: bool = False,
         dz: bool = False,
     ) -> numpy.float64:
-        """Evaluate tricubic interpolator or (first) partial derivative at
+        """
+        Evaluate tricubic interpolator.
+
+        Evaluate tricubic interpolator or (first) partial derivative at
         position `(x, y, z)`.
 
         Parameters
@@ -575,11 +616,14 @@ class Tricubic:
             Interpolated value.
         """
         if x < self.__Xmin or self.__Xmax < x:
-            raise ValueError("x must lie within grid defined by X")
+            msg = "`x` must lie within grid defined by `X`"
+            raise ValueError(msg)
         if y < self.__Ymin or self.__Ymax < y:
-            raise ValueError("y must lie within grid defined by Y")
+            msg = "`y` must lie within grid defined by `Y`"
+            raise ValueError(msg)
         if z < self.__Zmin or self.__Zmax < z:
-            raise ValueError("z must lie within grid defined by Z")
+            msg = "`z` must lie within grid defined by `Z`"
+            raise ValueError(msg)
         if dx or dy or dz:
             return self.partial_derivative(x, y, z, dx, dy, dz)
 
@@ -590,9 +634,9 @@ class Tricubic:
             and self.__Zk <= z < self.__Zkplus1
         ):
             # find new origin of cube
-            i0: int = numpy.where(self.X <= x)[0][-1]
-            j0: int = numpy.where(self.Y <= y)[0][-1]
-            k0: int = numpy.where(self.Z <= z)[0][-1]
+            i0: int = numpy.where(x >= self.X)[0][-1]
+            j0: int = numpy.where(y >= self.Y)[0][-1]
+            k0: int = numpy.where(z >= self.Z)[0][-1]
 
             # cheap and cheerful fix for evaluations at final grid points
             if x == self.__Xmax:
@@ -605,7 +649,8 @@ class Tricubic:
             self.__alpha = self.__calculate_coefficients(i0, j0, k0)
 
         if self.__alpha is None:
-            raise RuntimeError("`__alpha` not initialized")
+            msg = "`__alpha` not initialized"
+            raise RuntimeError(msg)
 
         # evaluate tricubic function
         xi = (x - self.__Xi) / (self.__Xiplus1 - self.__Xi)
@@ -647,7 +692,10 @@ class Tricubic:
         dy: bool = False,
         dz: bool = False,
     ) -> numpy.float64:
-        """Evaluate (first) partial derivative of tricubic interpolator with
+        """
+        Evaluate partial derivative of tricubic interpolator.
+
+        Evaluate (first) partial derivative of tricubic interpolator with
         respect to `x`, `y` or `z` at `(x, y, z)`. Defaults to partial
         derivative with respect to `x`.
 
@@ -664,13 +712,17 @@ class Tricubic:
             Interpolated value of derivative.
         """
         if x < self.__Xmin or self.__Xmax < x:
-            raise ValueError("x must lie within grid defined by X")
+            msg = "`x` must lie within grid defined by `X`"
+            raise ValueError(msg)
         if y < self.__Ymin or self.__Ymax < y:
-            raise ValueError("y must lie within grid defined by Y")
+            msg = "`y` must lie within grid defined by `Y`"
+            raise ValueError(msg)
         if z < self.__Zmin or self.__Zmax < z:
-            raise ValueError("z must lie within grid defined by Z")
+            msg = "`z` must lie within grid defined by `Z`"
+            raise ValueError(msg)
         if dx + dy + dz > 1:
-            raise ValueError("Only one of `dx`, `dy`, `dz` can be True")
+            msg = "Only one of `dx`, `dy`, `dz` can be `True`"
+            raise ValueError(msg)
 
         # check if coefficients from last interpolation can be re-used
         if not self.__initialised or not (
@@ -679,9 +731,9 @@ class Tricubic:
             and self.__Zk <= z < self.__Zkplus1
         ):
             # find new origin of cube
-            i0: int = numpy.where(self.X <= x)[0][-1]
-            j0: int = numpy.where(self.Y <= y)[0][-1]
-            k0: int = numpy.where(self.Z <= z)[0][-1]
+            i0: int = numpy.where(x >= self.X)[0][-1]
+            j0: int = numpy.where(y >= self.Y)[0][-1]
+            k0: int = numpy.where(z >= self.Z)[0][-1]
 
             # cheap and cheerful fix for evaluations at final grid points
             if x == self.__Xmax:
@@ -694,7 +746,8 @@ class Tricubic:
             self.__alpha = self.__calculate_coefficients(i0, j0, k0)
 
         if self.__alpha is None:
-            raise RuntimeError("`__alpha` not initialized")
+            msg = "`__alpha` not initialized"
+            raise RuntimeError(msg)
 
         # evaluate derivative of tricubic function
         xi = (x - self.__Xi) / (self.__Xiplus1 - self.__Xi)

@@ -1,9 +1,9 @@
 [project]
 name = "tricubic"
 version = "0.1.1.dev0"
-description = "Python implementation of a tricubic interpolator in three dimensions."
+description = "A Python implementation of a tricubic interpolator in three dimensions."
 readme = "README.md"
-authors = [{ name = "Fabian Gittins", email = "f.w.r.gittins@uu.nl" }]
+authors = [{name = "Fabian Gittins", email = "f.w.r.gittins@uu.nl"}]
 requires-python = ">=3.13"
 dependencies = [
     "numpy>=2.2.6",
@@ -38,6 +38,23 @@ typeCheckingMode = "strict"
 line-length = 79
 
 [tool.ruff.lint]
-select = [
-    "I",
+select = ["ALL"]
+ignore = [
+    "C90",
+    "COM812",
+    "FBT",
+    "ICN001",
+    "N",
+    "PD",
+    "PLR",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "D",
+    "INP001",
+    "PT",
 ]

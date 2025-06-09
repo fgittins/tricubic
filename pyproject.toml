@@ -1,6 +1,6 @@
 [project]
 name = "tricubic"
-version = "0.1.1.dev0"
+version = "0.2.0"
 description = "A Python implementation of a tricubic interpolator in three dimensions."
 readme = "README.md"
 authors = [{name = "Fabian Gittins", email = "f.w.r.gittins@uu.nl"}]

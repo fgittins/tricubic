@@ -48,9 +48,9 @@ interp(0.5, -0.1, 0.3)
 and its derivatives
 
 ```python
-interp(0.5, -0.1, 0.3, dx=True)
-interp(0.5, -0.1, 0.3, dy=True)
-interp(0.5, -0.1, 0.3, dz=True)
+interp(0.5, -0.1, 0.3, dx=1)
+interp(0.5, -0.1, 0.3, dy=1)
+interp(0.5, -0.1, 0.3, dz=1)
 ```
 
 Due to the local nature of the interpolation scheme, it does not accept arrays as inputs.

@@ -43,11 +43,9 @@ class Tricubic:
         Z: ArrayLike,
         F: ArrayLike,
     ) -> None:
-        X_array, Y_array, Z_array = (
-            numpy.asarray(X, dtype=numpy.float64),
-            numpy.asarray(Y, dtype=numpy.float64),
-            numpy.asarray(Z, dtype=numpy.float64),
-        )
+        X_array = numpy.asarray(X, dtype=numpy.float64)
+        Y_array = numpy.asarray(Y, dtype=numpy.float64)
+        Z_array = numpy.asarray(Z, dtype=numpy.float64)
         F_array = numpy.asarray(F, dtype=numpy.float64)
         if X_array.ndim != 1:
             msg = "`X` must be one dimensional"
@@ -79,19 +77,16 @@ class Tricubic:
                 "`Z`"
             )
             raise ValueError(msg)
-        if not numpy.all(numpy.diff(X) > 0) and not numpy.all(
-            numpy.diff(X) < 0,
-        ):
+        dX = numpy.diff(X)
+        if not (numpy.all(dX > 0) or numpy.all(dX < 0)):
             msg = "`X` must be either monotonically increasing or decreasing"
             raise ValueError(msg)
-        if not numpy.all(numpy.diff(Y) > 0) and not numpy.all(
-            numpy.diff(Y) < 0,
-        ):
+        dY = numpy.diff(Y)
+        if not (numpy.all(dY > 0) or numpy.all(dY < 0)):
             msg = "`Y` must be either monotonically increasing or decreasing"
             raise ValueError(msg)
-        if not numpy.all(numpy.diff(Z) > 0) and not numpy.all(
-            numpy.diff(Z) < 0,
-        ):
+        dZ = numpy.diff(Z)
+        if not (numpy.all(dZ > 0) or numpy.all(dZ < 0)):
             msg = "`Z` must be either monotonically increasing or decreasing"
             raise ValueError(msg)
 
@@ -100,12 +95,12 @@ class Tricubic:
         self.Z = Z_array
         self.F = F_array
 
-        self.__Xmin: numpy.float64 = X_array.min()
-        self.__Xmax: numpy.float64 = X_array.max()
-        self.__Ymin: numpy.float64 = Y_array.min()
-        self.__Ymax: numpy.float64 = Y_array.max()
-        self.__Zmin: numpy.float64 = Z_array.min()
-        self.__Zmax: numpy.float64 = Z_array.max()
+        self.__Xmin: float = X_array.min()
+        self.__Xmax: float = X_array.max()
+        self.__Ymin: float = Y_array.min()
+        self.__Ymax: float = Y_array.max()
+        self.__Zmin: float = Z_array.min()
+        self.__Zmax: float = Z_array.max()
 
         self.__dFdX = self.__build_dFdX(F_array, X_array)
         self.__dFdY = self.__build_dFdY(F_array, Y_array)
@@ -579,55 +574,29 @@ class Tricubic:
         self.__initialised = True
 
         # record location of cube
-        self.__Xi: numpy.float64 = self.X[i0]
-        self.__Xiplus1: numpy.float64 = self.X[i0 + 1]
-        self.__Yj: numpy.float64 = self.Y[j0]
-        self.__Yjplus1: numpy.float64 = self.Y[j0 + 1]
-        self.__Zk: numpy.float64 = self.Z[k0]
-        self.__Zkplus1: numpy.float64 = self.Z[k0 + 1]
+        self.__Xi: float = self.X[i0]
+        self.__Xiplus1: float = self.X[i0 + 1]
+        self.__Yj: float = self.Y[j0]
+        self.__Yjplus1: float = self.Y[j0 + 1]
+        self.__Zk: float = self.Z[k0]
+        self.__Zkplus1: float = self.Z[k0 + 1]
 
         return self.__Binv @ b
 
-    def __call__(
-        self,
-        x: float,
-        y: float,
-        z: float,
-        dx: bool = False,
-        dy: bool = False,
-        dz: bool = False,
-    ) -> numpy.float64:
-        """
-        Evaluate tricubic interpolator.
-
-        Evaluate tricubic interpolator or (first) partial derivative at
-        position `(x, y, z)`.
-
-        Parameters
-        ----------
-        x, y, z : float
-            Position arguments.
-        dx, dy, dz : bool
-            Which variable to take derivative with respect to.
-
-        Returns
-        -------
-        f : float
-            Interpolated value.
-        """
-        if x < self.__Xmin or self.__Xmax < x:
+    def __check_bounds(self, x: float, y: float, z: float) -> None:
+        """Check if `x`, `y`, `z` lie within the bounds of the grid."""
+        if not (self.__Xmin <= x <= self.__Xmax):
             msg = "`x` must lie within grid defined by `X`"
             raise ValueError(msg)
-        if y < self.__Ymin or self.__Ymax < y:
+        if not (self.__Ymin <= y <= self.__Ymax):
             msg = "`y` must lie within grid defined by `Y`"
             raise ValueError(msg)
-        if z < self.__Zmin or self.__Zmax < z:
+        if not (self.__Zmin <= z <= self.__Zmax):
             msg = "`z` must lie within grid defined by `Z`"
             raise ValueError(msg)
-        if dx or dy or dz:
-            return self.partial_derivative(x, y, z, dx, dy, dz)
 
-        # check if coefficients from last interpolation can be re-used
+    def __ensure_coefficients(self, x: float, y: float, z: float) -> None:
+        """Ensure that coefficients are calculated for the cube."""
         if not self.__initialised or not (
             self.__Xi <= x < self.__Xiplus1
             and self.__Yj <= y < self.__Yjplus1
@@ -648,39 +617,61 @@ class Tricubic:
 
             self.__alpha = self.__calculate_coefficients(i0, j0, k0)
 
+    def __call__(
+        self,
+        x: float,
+        y: float,
+        z: float,
+        dx: int = 0,
+        dy: int = 0,
+        dz: int = 0,
+    ) -> float:
+        """
+        Evaluate interpolator or its derivatives at given position.
+
+        Only first derivatives are supported.
+
+        Parameters
+        ----------
+        x, y, z : float
+            Position arguments.
+        dx : int, optional
+            Order of `x` derivative.
+        dy : int, optional
+            Order of `y` derivative.
+        dz : int, optional
+            Order of `z` derivative.
+
+        Returns
+        -------
+        f : float
+            Interpolated value.
+        """
+        if dx or dy or dz:
+            return self.partial_derivative(x, y, z, dx, dy, dz)
+        self.__check_bounds(x, y, z)
+
+        # check if coefficients from last interpolation can be re-used
+        self.__ensure_coefficients(x, y, z)
+
         if self.__alpha is None:
             msg = "`__alpha` not initialized"
             raise RuntimeError(msg)
 
         # evaluate tricubic function
+        C = self.__alpha.reshape((4, 4, 4), order="F")
+
         xi = (x - self.__Xi) / (self.__Xiplus1 - self.__Xi)
         eta = (y - self.__Yj) / (self.__Yjplus1 - self.__Yj)
         zeta = (z - self.__Zk) / (self.__Zkplus1 - self.__Zk)
 
-        etaarray = (1, eta, eta**2, eta**3)
-        zetaarray = (1, zeta, zeta**2, zeta**3)
+        xiarray = numpy.array([1, xi, xi**2, xi**3], dtype=numpy.float64)
+        etaarray = numpy.array([1, eta, eta**2, eta**3], dtype=numpy.float64)
+        zetaarray = numpy.array(
+            [1, zeta, zeta**2, zeta**3], dtype=numpy.float64
+        )
 
-        f = numpy.float64(0)
-        val: numpy.float64
-        for c in range(4):
-            for d in range(4):
-                val = (
-                    (
-                        self.__alpha[4 * c + 16 * d]
-                        + xi
-                        * (
-                            self.__alpha[1 + 4 * c + 16 * d]
-                            + xi
-                            * (
-                                self.__alpha[2 + 4 * c + 16 * d]
-                                + xi * self.__alpha[3 + 4 * c + 16 * d]
-                            )
-                        )
-                    )
-                    * etaarray[c]
-                    * zetaarray[d]
-                )
-                f += val
+        f: float = numpy.einsum("i,j,k,ijk", xiarray, etaarray, zetaarray, C)
         return f
 
     def partial_derivative(
@@ -688,142 +679,92 @@ class Tricubic:
         x: float,
         y: float,
         z: float,
-        dx: bool = True,
-        dy: bool = False,
-        dz: bool = False,
-    ) -> numpy.float64:
+        dx: int,
+        dy: int,
+        dz: int,
+    ) -> float:
         """
-        Evaluate partial derivative of tricubic interpolator.
+        Evaluate derivatives at given position.
 
-        Evaluate (first) partial derivative of tricubic interpolator with
-        respect to `x`, `y` or `z` at `(x, y, z)`. Defaults to partial
-        derivative with respect to `x`.
+        Only first derivatives are supported.
 
         Parameters
         ----------
         x, y, z : float
             Position arguments.
-        dx, dy, dz : bool
-            Which variable to take derivative with respect to.
+        dx : int
+            Order of `x` derivative.
+        dy : int
+            Order of `y` derivative.
+        dz : int
+            Order of `z` derivative.
 
         Returns
         -------
         df : float
             Interpolated value of derivative.
         """
-        if x < self.__Xmin or self.__Xmax < x:
-            msg = "`x` must lie within grid defined by `X`"
-            raise ValueError(msg)
-        if y < self.__Ymin or self.__Ymax < y:
-            msg = "`y` must lie within grid defined by `Y`"
-            raise ValueError(msg)
-        if z < self.__Zmin or self.__Zmax < z:
-            msg = "`z` must lie within grid defined by `Z`"
-            raise ValueError(msg)
-        if dx + dy + dz > 1:
-            msg = "Only one of `dx`, `dy`, `dz` can be `True`"
+        self.__check_bounds(x, y, z)
+        if dx not in (0, 1) or dy not in (0, 1) or dz not in (0, 1):
+            msg = "Only first derivatives are supported"
+            raise NotImplementedError(msg)
+        if dx != 1 and dy != 1 and dz != 1:
+            msg = "One of `dx`, `dy`, `dz` must be `1`"
             raise ValueError(msg)
 
         # check if coefficients from last interpolation can be re-used
-        if not self.__initialised or not (
-            self.__Xi <= x < self.__Xiplus1
-            and self.__Yj <= y < self.__Yjplus1
-            and self.__Zk <= z < self.__Zkplus1
-        ):
-            # find new origin of cube
-            i0: int = numpy.where(x >= self.X)[0][-1]
-            j0: int = numpy.where(y >= self.Y)[0][-1]
-            k0: int = numpy.where(z >= self.Z)[0][-1]
-
-            # cheap and cheerful fix for evaluations at final grid points
-            if x == self.__Xmax:
-                i0 -= 1
-            if y == self.__Ymax:
-                j0 -= 1
-            if z == self.__Zmax:
-                k0 -= 1
-
-            self.__alpha = self.__calculate_coefficients(i0, j0, k0)
+        self.__ensure_coefficients(x, y, z)
 
         if self.__alpha is None:
             msg = "`__alpha` not initialized"
             raise RuntimeError(msg)
 
         # evaluate derivative of tricubic function
+        C = self.__alpha.reshape((4, 4, 4), order="F")
+
         xi = (x - self.__Xi) / (self.__Xiplus1 - self.__Xi)
         eta = (y - self.__Yj) / (self.__Yjplus1 - self.__Yj)
         zeta = (z - self.__Zk) / (self.__Zkplus1 - self.__Zk)
 
-        xiarray = (1, xi, xi**2)
-        etaarray = (1, eta, eta**2, eta**3)
-        zetaarray = (1, zeta, zeta**2, zeta**3)
+        if dx == 1:
+            dxiarray = numpy.array([1, 2 * xi, 3 * xi**2], dtype=numpy.float64)
+            etaarray = numpy.array(
+                [1, eta, eta**2, eta**3], dtype=numpy.float64
+            )
+            zetaarray = numpy.array(
+                [1, zeta, zeta**2, zeta**3], dtype=numpy.float64
+            )
 
-        df = numpy.float64(0)
-        val: numpy.float64
-        if dx:
-            for a in range(1, 4):
-                for d in range(4):
-                    val = (
-                        (
-                            self.__alpha[a + 16 * d]
-                            + eta
-                            * (
-                                self.__alpha[a + 4 + 16 * d]
-                                + eta
-                                * (
-                                    self.__alpha[a + 8 + 16 * d]
-                                    + eta * self.__alpha[a + 12 + 16 * d]
-                                )
-                            )
-                        )
-                        * a
-                        * xiarray[a - 1]
-                        / (self.__Xiplus1 - self.__Xi)
-                        * zetaarray[d]
-                    )
-                    df += val
-        elif dy:
-            for c in range(1, 4):
-                for d in range(4):
-                    val = (
-                        (
-                            self.__alpha[4 * c + 16 * d]
-                            + xi
-                            * (
-                                self.__alpha[1 + 4 * c + 16 * d]
-                                + xi
-                                * (
-                                    self.__alpha[2 + 4 * c + 16 * d]
-                                    + xi * self.__alpha[3 + 4 * c + 16 * d]
-                                )
-                            )
-                        )
-                        * c
-                        * etaarray[c - 1]
-                        / (self.__Yjplus1 - self.__Yj)
-                        * zetaarray[d]
-                    )
-                    df += val
-        elif dz:
-            for c in range(4):
-                for d in range(1, 4):
-                    val = (
-                        (
-                            self.__alpha[4 * c + 16 * d]
-                            + xi
-                            * (
-                                self.__alpha[1 + 4 * c + 16 * d]
-                                + xi
-                                * (
-                                    self.__alpha[2 + 4 * c + 16 * d]
-                                    + xi * self.__alpha[3 + 4 * c + 16 * d]
-                                )
-                            )
-                        )
-                        * etaarray[c]
-                        * d
-                        * zetaarray[d - 1]
-                        / (self.__Zkplus1 - self.__Zk)
-                    )
-                    df += val
-        return df
+            df: float = numpy.einsum(
+                "i,j,k,ijk", dxiarray, etaarray, zetaarray, C[1:, :, :]
+            ) / (self.__Xiplus1 - self.__Xi)
+            return df
+        if dy == 1:
+            xiarray = numpy.array([1, xi, xi**2, xi**3], dtype=numpy.float64)
+            detaarray = numpy.array(
+                [1, 2 * eta, 3 * eta**2], dtype=numpy.float64
+            )
+            zetaarray = numpy.array(
+                [1, zeta, zeta**2, zeta**3], dtype=numpy.float64
+            )
+
+            df: float = numpy.einsum(
+                "i,j,k,ijk", xiarray, detaarray, zetaarray, C[:, 1:, :]
+            ) / (self.__Yjplus1 - self.__Yj)
+            return df
+        if dz == 1:
+            xiarray = numpy.array([1, xi, xi**2, xi**3], dtype=numpy.float64)
+            etaarray = numpy.array(
+                [1, eta, eta**2, eta**3], dtype=numpy.float64
+            )
+            dzetaarray = numpy.array(
+                [1, 2 * zeta, 3 * zeta**2], dtype=numpy.float64
+            )
+
+            df: float = numpy.einsum(
+                "i,j,k,ijk", xiarray, etaarray, dzetaarray, C[:, :, 1:]
+            ) / (self.__Zkplus1 - self.__Zk)
+            return df
+
+        msg = "Unexpected derivative state"
+        raise RuntimeError(msg)

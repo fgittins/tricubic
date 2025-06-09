@@ -6,6 +6,7 @@ Module includes:
 """
 
 from importlib.resources import files
+from typing import Annotated
 
 import numpy
 from numpy.typing import ArrayLike, NDArray
@@ -112,18 +113,10 @@ class Tricubic:
 
         self.__initialised = False
 
-        # place-holder values
-        self.__Xi = self.__Xmin
-        self.__Xiplus1 = self.__Xmax
-        self.__Yj = self.__Ymin
-        self.__Yjplus1 = self.__Ymax
-        self.__Zk = self.__Zmin
-        self.__Zkplus1 = self.__Zmax
-
-        self.__alpha: None | NDArray[numpy.float64] = None
-
         with files("tricubic").joinpath("binv.npy").open("rb") as file:
-            self.__Binv: NDArray[numpy.int64] = numpy.load(file)
+            self.__Binv: Annotated[NDArray[numpy.int64], (64, 64)] = (
+                numpy.load(file)
+            )
 
     @staticmethod
     def __build_dFdX(
@@ -313,7 +306,7 @@ class Tricubic:
         i0: int,
         j0: int,
         k0: int,
-    ) -> NDArray[numpy.float64]:
+    ) -> Annotated[NDArray[numpy.float64], (64,)]:
         r"""
         Calculate vector of coefficients.
 
@@ -346,7 +339,7 @@ class Tricubic:
         """
         b = numpy.array(
             [
-                #####
+                ###############################################################
                 self.F[i0, j0, k0],
                 self.F[i0 + 1, j0, k0],
                 self.F[i0, j0 + 1, k0],
@@ -566,6 +559,7 @@ class Tricubic:
                     * (self.Z[k0 + 1] - self.Z[k0])
                     * self.__d3FdXdYdZ[i0 + 1, j0 + 1, k0 + 1]
                 ),
+                ###############################################################
             ],
             dtype=numpy.float64,
         )
@@ -654,10 +648,6 @@ class Tricubic:
         # check if coefficients from last interpolation can be re-used
         self.__ensure_coefficients(x, y, z)
 
-        if self.__alpha is None:
-            msg = "`__alpha` not initialized"
-            raise RuntimeError(msg)
-
         # evaluate tricubic function
         C = self.__alpha.reshape((4, 4, 4), order="F")
 
@@ -708,16 +698,12 @@ class Tricubic:
         if dx not in (0, 1) or dy not in (0, 1) or dz not in (0, 1):
             msg = "Only first derivatives are supported"
             raise NotImplementedError(msg)
-        if dx != 1 and dy != 1 and dz != 1:
+        if dx + dy + dz != 1:
             msg = "One of `dx`, `dy`, `dz` must be `1`"
             raise ValueError(msg)
 
         # check if coefficients from last interpolation can be re-used
         self.__ensure_coefficients(x, y, z)
-
-        if self.__alpha is None:
-            msg = "`__alpha` not initialized"
-            raise RuntimeError(msg)
 
         # evaluate derivative of tricubic function
         C = self.__alpha.reshape((4, 4, 4), order="F")
@@ -726,6 +712,7 @@ class Tricubic:
         eta = (y - self.__Yj) / (self.__Yjplus1 - self.__Yj)
         zeta = (z - self.__Zk) / (self.__Zkplus1 - self.__Zk)
 
+        df: float = 0.0
         if dx == 1:
             dxiarray = numpy.array([1, 2 * xi, 3 * xi**2], dtype=numpy.float64)
             etaarray = numpy.array(
@@ -735,10 +722,9 @@ class Tricubic:
                 [1, zeta, zeta**2, zeta**3], dtype=numpy.float64
             )
 
-            df: float = numpy.einsum(
+            df = numpy.einsum(
                 "i,j,k,ijk", dxiarray, etaarray, zetaarray, C[1:, :, :]
             ) / (self.__Xiplus1 - self.__Xi)
-            return df
         if dy == 1:
             xiarray = numpy.array([1, xi, xi**2, xi**3], dtype=numpy.float64)
             detaarray = numpy.array(
@@ -748,10 +734,9 @@ class Tricubic:
                 [1, zeta, zeta**2, zeta**3], dtype=numpy.float64
             )
 
-            df: float = numpy.einsum(
+            df = numpy.einsum(
                 "i,j,k,ijk", xiarray, detaarray, zetaarray, C[:, 1:, :]
             ) / (self.__Yjplus1 - self.__Yj)
-            return df
         if dz == 1:
             xiarray = numpy.array([1, xi, xi**2, xi**3], dtype=numpy.float64)
             etaarray = numpy.array(
@@ -761,10 +746,7 @@ class Tricubic:
                 [1, 2 * zeta, 3 * zeta**2], dtype=numpy.float64
             )
 
-            df: float = numpy.einsum(
+            df = numpy.einsum(
                 "i,j,k,ijk", xiarray, etaarray, dzetaarray, C[:, :, 1:]
             ) / (self.__Zkplus1 - self.__Zk)
-            return df
-
-        msg = "Unexpected derivative state"
-        raise RuntimeError(msg)
+        return df
